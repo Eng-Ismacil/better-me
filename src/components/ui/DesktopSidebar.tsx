@@ -1,0 +1,147 @@
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import BetterMeLogo from "@/components/brand/BetterMeLogo";
+import Icon from "./Icon";
+
+interface DesktopSidebarProps {
+  userName?: string;
+  userEmail?: string;
+  avatarUrl?: string;
+}
+
+export default function DesktopSidebar({
+  userName = "Ismacil Dahir",
+  userEmail = "ismacil.dahir@example.com",
+  avatarUrl = "/images/avatar.jpg",
+}: DesktopSidebarProps) {
+  const pathname = usePathname();
+
+  const primaryNav = [
+    { label: "Home", href: "/home", icon: "grid_view" },
+    { label: "Habits", href: "/habits", icon: "check_circle" },
+    { label: "Routines", href: "/routines", icon: "auto_stories" },
+    { label: "Calendar", href: "/calendar", icon: "calendar_today" },
+    { label: "Daily Check-in", href: "/check-in", icon: "ecg_heart" },
+    { label: "Insights", href: "/insights", icon: "insert_chart" },
+    { label: "Achievements", href: "/achievements", icon: "military_tech" },
+    { label: "Reminders", href: "/reminders", icon: "notifications" },
+  ];
+
+  const secondaryNav = [
+    { label: "Profile", href: "/profile", icon: "account_circle" },
+    { label: "Settings", href: "/settings", icon: "settings" },
+  ];
+
+  return (
+    <aside className="hidden md:flex flex-col w-64 border-r border-[#E5E7EB] bg-white h-screen fixed left-0 top-0 z-30 p-5 select-none">
+      {/* Brand Logo */}
+      <div className="pb-6 pt-1 flex items-center justify-between border-b border-[#E5E7EB]/60">
+        <Link href="/home" className="flex items-center gap-2">
+          <BetterMeLogo size={32} />
+        </Link>
+      </div>
+
+      {/* Nav List */}
+      <div className="flex-1 overflow-y-auto no-scrollbar py-4 flex flex-col gap-1">
+        <span className="text-[11px] font-semibold tracking-wider uppercase text-[#717786] px-3 mb-1">
+          Menu
+        </span>
+        {primaryNav.map((item) => {
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/home" && pathname?.startsWith(item.href));
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-[14px] transition-all ${
+                isActive
+                  ? "bg-[#EFF6FF] text-[#007AFF] font-semibold"
+                  : "text-[#667085] hover:text-[#101010] hover:bg-[#f6f3f2]"
+              }`}
+            >
+              <Icon
+                name={item.icon}
+                size={20}
+                className={isActive ? "text-[#007AFF]" : "text-[#717786]"}
+              />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+
+        <span className="text-[11px] font-semibold tracking-wider uppercase text-[#717786] px-3 mt-4 mb-1">
+          Preferences
+        </span>
+        {secondaryNav.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-[14px] transition-all ${
+                isActive
+                  ? "bg-[#EFF6FF] text-[#007AFF] font-semibold"
+                  : "text-[#667085] hover:text-[#101010] hover:bg-[#f6f3f2]"
+              }`}
+            >
+              <Icon
+                name={item.icon}
+                size={20}
+                className={isActive ? "text-[#007AFF]" : "text-[#717786]"}
+              />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Streak Callout Widget */}
+      <div className="p-3 bg-[#EFF6FF] rounded-xl border border-[#d8e2ff] flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#007AFF] shadow-xs">
+            <Icon name="local_fire_department" size={18} className="text-[#007AFF]" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[12px] font-semibold text-[#101010]">
+              14-Day Streak
+            </span>
+            <span className="text-[11px] text-[#22C55E] font-medium">
+              Flourishing Pace
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* User Footer Profile */}
+      <Link
+        href="/profile"
+        className="flex items-center gap-3 pt-3 border-t border-[#E5E7EB] hover:bg-[#f6f3f2] p-2 rounded-xl transition-colors"
+      >
+        <div className="relative w-9 h-9 rounded-full overflow-hidden bg-[#E5E7EB]">
+          <Image
+            src={avatarUrl}
+            alt={userName}
+            fill
+            className="object-cover"
+            sizes="36px"
+          />
+        </div>
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className="text-[13px] font-semibold text-[#101010] truncate">
+            {userName}
+          </span>
+          <span className="text-[11px] text-[#667085] truncate">
+            {userEmail}
+          </span>
+        </div>
+        <Icon name="chevron_right" size={16} className="text-[#717786]" />
+      </Link>
+    </aside>
+  );
+}
