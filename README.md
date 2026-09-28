@@ -35,3 +35,37 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 # better-me habit tracker app
+
+## Android WebView App
+
+The Android project is a native Capacitor app named **BetterMe**. It opens the production site directly inside Android WebView and uses the generated BetterMe launcher icon; it does not open Chrome's PWA install flow.
+
+The default WebView URL is `https://better-me1.vercel.app`. To use a different site, set the optional `CAPACITOR_SERVER_URL` environment variable when syncing:
+
+```bash
+CAPACITOR_SERVER_URL=https://your-domain.example npm run android:sync
+```
+
+For local device testing, use the development computer's LAN IP (not `localhost`):
+
+```bash
+CAPACITOR_SERVER_URL=http://192.168.1.20:3000 npm run android:sync
+```
+
+Replace the example IP with the address of the computer running `npm run dev`. The phone and computer must be on the same network.
+
+To open the native project, install Android Studio with JDK 21 and Android SDK 36, then run:
+
+```bash
+npm run android:sync
+npm run android:open
+```
+
+Alternatively, with JDK 21 and Android SDK 36 configured, build a debug APK with:
+
+```bash
+cd android
+./gradlew assembleDebug
+```
+
+The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
