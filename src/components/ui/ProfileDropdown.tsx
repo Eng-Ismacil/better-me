@@ -11,6 +11,7 @@ interface ProfileDropdownProps {
   userName?: string;
   userEmail?: string;
   avatarUrl?: string;
+  isAdmin?: boolean;
   align?: "left" | "right";
   size?: "sm" | "md";
 }
@@ -19,6 +20,7 @@ export default function ProfileDropdown({
   userName = "Ismacil Dahir",
   userEmail = "ismacil.dahir@example.com",
   avatarUrl = "/images/avatar.jpg",
+  isAdmin = false,
   align = "right",
   size = "md",
 }: ProfileDropdownProps) {
@@ -131,6 +133,26 @@ export default function ProfileDropdown({
 
           {/* Navigation Links */}
           <div className="px-2 py-1.5 flex flex-col gap-0.5">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-3 py-2 rounded-xl text-[#374151] hover:text-[#0B6EF3] hover:bg-[#F4F8FF] transition-colors group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] text-[#0B6EF3] flex items-center justify-center group-hover:bg-[#0B6EF3] group-hover:text-white transition-colors">
+                  <Icon name="admin_panel_settings" size={18} />
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-[13px] font-bold text-[#111827] group-hover:text-[#0B6EF3]">
+                    {language === "so" ? "Ku noqo Admin Panel" : "Return to Admin Panel"}
+                  </span>
+                  <span className="text-[11px] text-[#8692A6] truncate">
+                    {language === "so" ? "Maamulka BetterMe" : "BetterMe administration"}
+                  </span>
+                </div>
+              </Link>
+            )}
+
             {/* Profile Link */}
             <Link
               href="/profile"

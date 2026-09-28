@@ -117,3 +117,37 @@
 .animate-pulse-glow {
   animation: pulseGlow 3s infinite ease-in-out;
 }
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 14mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .report-print-area,
+  .report-print-area * {
+    visibility: visible !important;
+  }
+
+  .report-print-area {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    color: #101010 !important;
+    background: #fff !important;
+  }
+
+  .report-toolbar {
+    display: none !important;
+  }
+
+  .report-print-card {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+}

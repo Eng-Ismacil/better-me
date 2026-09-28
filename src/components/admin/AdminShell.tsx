@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import BetterMeLogo from "@/components/brand/BetterMeLogo";
@@ -15,13 +15,15 @@ interface AdminShellProps {
 
 const NAV_ITEMS = [
   { href: "/admin", icon: "dashboard", en: "Dashboard", so: "Dashboard", exact: true },
-  { href: "/admin/users", icon: "group", en: "Users", so: "Isticmaalayaasha" },
+  { href: "/admin/users", icon: "group", en: "Profiles", so: "Profile-yada" },
   { href: "/admin/habits", icon: "task_alt", en: "Habits / Tasks", so: "Caadooyinka / Hawlaha" },
-  { href: "/admin#streaks", icon: "local_fire_department", en: "Top Streaks", so: "Xiriirrada Sare", hash: "streaks" },
+  { href: "/admin/streaks", icon: "local_fire_department", en: "Top Streaks", so: "Xiriirrada Sare" },
   { href: "/admin/broadcast", icon: "campaign", en: "Broadcast", so: "Faafinta" },
   { href: "/admin/recycle-bin", icon: "delete", en: "Recycle Bin", so: "Qashinka" },
   { href: "/admin/audit", icon: "history", en: "Audit Log", so: "Diiwaanka" },
   { href: "/admin/finance", icon: "account_balance_wallet", en: "Finance", so: "Maaliyadda" },
+  { href: "/admin/reports", icon: "summarize", en: "Reports", so: "Warbixinno" },
+  { href: "/admin/settings", icon: "settings", en: "Operations", so: "Hawlgalka" },
 ] as const;
 
 export default function AdminShell({
@@ -32,13 +34,21 @@ export default function AdminShell({
   const pathname = usePathname();
   const { language } = useTranslation();
   const so = language === "so";
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (href: string, exact?: boolean) => {
-    const path = href.split("#")[0];
+    const [path, hash] = href.split("#");
+    if (hash) return false;
     if (exact) return pathname === path;
     if (path === "/admin") return pathname === "/admin";
     return pathname === path || pathname?.startsWith(`${path}/`);
   };
+
+  const mobileItems = [
+    { href: "/admin", icon: "dashboard", en: "Dashboard", so: "Dashboard", exact: true },
+    { href: "/admin/users", icon: "group", en: "Profiles", so: "Profiles" },
+    { href: "/admin/habits", icon: "task_alt", en: "Habits", so: "Caadooyin" },
+  ] as const;
 
   return (
     <div className="min-h-screen bg-[#FAFBFD] flex">
@@ -121,37 +131,95 @@ export default function AdminShell({
           </div>
         </header>
 
-        {/* Mobile nav strip */}
-        <div className="lg:hidden border-b border-[#E7ECF3] bg-white px-3 py-2 overflow-x-auto no-scrollbar">
-          <div className="flex items-center gap-1.5 min-w-max">
-            {NAV_ITEMS.map((item) => {
+        {moreOpen && (
+          <div className="fixed inset-0 z-30 lg:hidden">
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/20"
+              onClick={() => setMoreOpen(false)}
+              aria-label={so ? "Xir menu-ga" : "Close menu"}
+            />
+            <section className="absolute bottom-[calc(4rem+env(safe-area-inset-bottom))] left-3 right-3 mx-auto max-w-lg rounded-2xl border border-[#E7ECF3] bg-white p-4 shadow-xl">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-[14px] font-bold text-[#111827]">
+                  {so ? "Qaybaha kale" : "More sections"}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-[#667085] hover:bg-[#F3F4F6]"
+                  aria-label={so ? "Xir" : "Close"}
+                >
+                  <Icon name="close" size={18} />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {NAV_ITEMS.slice(3).map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMoreOpen(false)}
+                    className={`flex min-h-11 items-center gap-2 rounded-xl px-3 text-[12px] font-semibold ${
+                      isActive(item.href, "exact" in item ? item.exact : false)
+                        ? "bg-[#EFF6FF] text-[#0B6EF3]"
+                        : "bg-[#F8FAFC] text-[#475467]"
+                    }`}
+                  >
+                    <Icon name={item.icon} size={17} />
+                    <span className="truncate">{so ? item.so : item.en}</span>
+                  </Link>
+                ))}
+                <Link
+                  href="/home"
+                  onClick={() => setMoreOpen(false)}
+                  className="flex min-h-11 items-center gap-2 rounded-xl bg-[#F8FAFC] px-3 text-[12px] font-semibold text-[#475467]"
+                >
+                  <Icon name="arrow_back" size={17} />
+                  <span>{so ? "Ku noqo App-ka" : "Back to app"}</span>
+                </Link>
+              </div>
+            </section>
+          </div>
+        )}
+
+        <nav
+          aria-label={so ? "Qaybaha maamulka" : "Admin sections"}
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E7ECF3] bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
+        >
+          <div className="mx-auto grid min-h-16 max-w-lg grid-cols-4">
+            {mobileItems.map((item) => {
               const active = isActive(item.href, "exact" in item ? item.exact : false);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold whitespace-nowrap transition-colors ${
-                    active
-                      ? "bg-[#0B6EF3] text-white"
-                      : "bg-[#F4F8FF] text-[#667085] hover:text-[#0B6EF3]"
+                  onClick={() => setMoreOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] font-bold transition-colors ${
+                    active ? "text-[#0B6EF3]" : "text-[#667085]"
                   }`}
                 >
-                  <Icon name={item.icon} size={14} />
-                  <span>{so ? item.so : item.en}</span>
+                  <Icon name={item.icon} size={20} />
+                  <span className="max-w-full truncate">{so ? item.so : item.en}</span>
                 </Link>
               );
             })}
-            <Link
-              href="/home"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold bg-[#F3F4F6] text-[#667085]"
+            <button
+              type="button"
+              onClick={() => setMoreOpen((open) => !open)}
+              aria-expanded={moreOpen}
+              aria-haspopup="true"
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] font-bold transition-colors ${
+                moreOpen ? "text-[#0B6EF3]" : "text-[#667085]"
+              }`}
             >
-              <Icon name="arrow_back" size={14} />
-              <span>{so ? "App" : "App"}</span>
-            </Link>
+              <Icon name="more_horiz" size={20} />
+              <span>{so ? "Kale" : "More"}</span>
+            </button>
           </div>
-        </div>
+        </nav>
 
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 pb-16">
+        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 pb-28 lg:pb-16">
           {children}
         </main>
       </div>

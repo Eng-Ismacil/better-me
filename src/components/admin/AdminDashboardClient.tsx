@@ -155,7 +155,8 @@ export default function AdminDashboardClient() {
   }, []);
 
   useEffect(() => {
-    load();
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
   const usage =
@@ -165,6 +166,36 @@ export default function AdminDashboardClient() {
       d.setDate(d.getDate() - (13 - i));
       return { date: d.toISOString().slice(0, 10), count: 0 };
     });
+  const quickActions = [
+    {
+      href: "/admin/users",
+      icon: "group",
+      label: so ? "Maamul profile-yada" : "Manage profiles",
+      color: "#0B6EF3",
+      bg: "#EFF6FF",
+    },
+    {
+      href: "/admin/habits",
+      icon: "task_alt",
+      label: so ? "Maamul caadooyinka" : "Manage habits",
+      color: "#168A67",
+      bg: "#EAF8F2",
+    },
+    {
+      href: "/admin/broadcast",
+      icon: "campaign",
+      label: so ? "Dir ogeysiis" : "Send broadcast",
+      color: "#B45309",
+      bg: "#FFF7E8",
+    },
+    {
+      href: "/admin/audit",
+      icon: "history",
+      label: so ? "Eeg diiwaanka" : "Review audit log",
+      color: "#475467",
+      bg: "#F2F4F7",
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -195,6 +226,32 @@ export default function AdminDashboardClient() {
           <span>{error}</span>
         </div>
       )}
+
+      <section aria-labelledby="admin-quick-actions">
+        <h2
+          id="admin-quick-actions"
+          className="mb-3 text-[14px] font-bold text-[#111827]"
+        >
+          {so ? "Falal degdeg ah" : "Quick actions"}
+        </h2>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          {quickActions.map((action) => (
+            <Link
+              key={action.href}
+              href={action.href}
+              className="flex min-h-14 min-w-0 items-center gap-2.5 rounded-xl border border-[#E7ECF3] bg-white p-3 text-[12px] font-bold text-[#344054] shadow-[0_2px_12px_rgba(16,24,40,0.03)] transition-colors hover:border-[#C9DDFB] hover:bg-[#FAFCFF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0B6EF3]"
+            >
+              <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                style={{ background: action.bg, color: action.color }}
+              >
+                <Icon name={action.icon} size={19} />
+              </span>
+              <span className="min-w-0 truncate">{action.label}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {loading && !stats ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -248,58 +305,7 @@ export default function AdminDashboardClient() {
             <UsageChart data={usage} />
           </section>
 
-          <div className="grid md:grid-cols-2 gap-4" id="streaks">
-            <section className="bg-white rounded-2xl border border-[#E7ECF3] p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Icon
-                    name="local_fire_department"
-                    size={18}
-                    className="text-[#EA580C]"
-                  />
-                  <h2 className="text-[15px] font-bold text-[#111827]">
-                    {so ? "Xiriirrada Ugu Sarreeya" : "Top Streak Users"}
-                  </h2>
-                </div>
-              </div>
-              <ul className="flex flex-col gap-2.5">
-                {(stats?.topStreaks || []).length === 0 ? (
-                  <li className="text-[13px] text-[#667085] py-4 text-center">
-                    {so ? "Xog lama helin" : "No streak data yet"}
-                  </li>
-                ) : (
-                  (stats?.topStreaks || []).slice(0, 8).map((u, idx) => (
-                    <li
-                      key={u.id}
-                      className="flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-[#FAFBFD]"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="w-6 text-[12px] font-bold text-[#9CA3AF]">
-                          #{idx + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <Link
-                            href={`/admin/users/${u.id}`}
-                            className="text-[13px] font-bold text-[#111827] hover:text-[#0B6EF3] truncate block"
-                          >
-                            {u.name}
-                          </Link>
-                          <p className="text-[11px] text-[#667085] truncate">
-                            {u.email}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FFF7ED] text-[#EA580C] text-[12px] font-bold shrink-0">
-                        <Icon name="local_fire_department" size={14} />
-                        {u.streak}
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
-
-            <section className="bg-white rounded-2xl border border-[#E7ECF3] p-5">
+          <section className="bg-white rounded-2xl border border-[#E7ECF3] p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Icon name="emoji_events" size={18} className="text-[#F59E0B]" />
                 <h2 className="text-[15px] font-bold text-[#111827]">
@@ -341,8 +347,7 @@ export default function AdminDashboardClient() {
                   ))
                 )}
               </ul>
-            </section>
-          </div>
+          </section>
         </>
       )}
     </div>

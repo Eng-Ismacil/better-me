@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { connectToDatabase, ensureIndexes } from "./db";
+import { getMaintenanceSettings } from "./maintenance";
 import { ObjectId } from "mongodb";
 import { User, Habit } from "@/types";
 
@@ -76,7 +77,7 @@ export async function getSession(): Promise<SessionUser | null> {
     if (user.deletedAt) return null;
     if (user.status === "disabled") return null;
 
-    return {
+    const sessionUser: SessionUser = {
       id: user._id?.toString() || userId,
       name: user.name,
       email: user.email,
@@ -84,6 +85,8 @@ export async function getSession(): Promise<SessionUser | null> {
       memberSince: user.memberSince || "6 Months",
       isAdmin: !!user.isAdmin,
     };
+    if (!sessionUser.isAdmin && (await getMaintenanceSettings()).enabled) return null;
+    return sessionUser;
   } catch {
     return null;
   }

@@ -13,6 +13,7 @@ interface TopBarProps {
   avatarUrl?: string;
   userName?: string;
   userEmail?: string;
+  isAdmin?: boolean;
   onFilterClick?: () => void;
   showFilter?: boolean;
 }
@@ -22,6 +23,7 @@ export default function TopBar({
   avatarUrl = "/images/avatar.jpg",
   userName = "Ismacil Dahir",
   userEmail = "ismacildahir46@gmail.com",
+  isAdmin = false,
   onFilterClick,
   showFilter = true,
 }: TopBarProps) {
@@ -34,32 +36,21 @@ export default function TopBar({
 
   return (
     <header className="fixed top-0 inset-x-0 z-40 bg-[#FAFBFD]/92 backdrop-blur-xl pt-safe border-b border-[#E7ECF3]">
-      {/* iOS style Simulated Status bar on mobile */}
-      <div className="h-6 px-5 flex items-center justify-between text-[#101010] select-none pt-1 text-[11px] font-semibold tracking-tight">
-        <span>9:41</span>
-        <div className="flex items-center gap-1.5 text-[#101010]">
-          <Icon name="signal_cellular_alt" size={15} />
-          <Icon name="wifi" size={15} />
-          <Icon name="battery_full" size={17} />
-        </div>
-      </div>
-
       {/* Main Header Bar */}
-      <div className="h-14 px-4 max-w-lg mx-auto flex items-center justify-between">
-        <Link href="/home" prefetch={true} className="flex items-center gap-2 select-none group">
-          <BetterMeLogo size={28} />
-          <span className="font-extrabold text-[17px] tracking-tight text-[#101010] ml-1">
+      <div className="h-14 px-3 sm:px-4 max-w-lg mx-auto flex items-center justify-between gap-2">
+        <Link href="/home" className="flex items-center gap-2 select-none group">
+          <BetterMeLogo size={26} />
+          <span className="font-extrabold text-[15px] tracking-tight text-[#101010] ml-0.5">
             {title}
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Always accessible + Add Habit button */}
           <Link
             href="/habits/new"
-            prefetch={true}
             aria-label="Add new habit"
-            className="w-8 h-8 rounded-full bg-[#0B6EF3] text-white flex items-center justify-center hover:bg-[#0958c7] active:scale-90 transition-all shadow-xs shrink-0"
+            className="hidden min-[380px]:flex w-8 h-8 rounded-full bg-[#0B6EF3] text-white items-center justify-center hover:bg-[#0958c7] active:scale-90 transition-all shadow-xs shrink-0"
             title="Add Habit / Ku dar Caado"
           >
             <Icon name="add" size={19} />
@@ -79,7 +70,6 @@ export default function TopBar({
           {/* Notifications Bell with Live Badge */}
           <Link
             href="/notifications"
-            prefetch={true}
             aria-label="Notifications"
             className="relative w-9 h-9 flex items-center justify-center rounded-full text-[#667085] hover:text-[#101010] hover:bg-white transition-colors"
           >
@@ -108,6 +98,7 @@ export default function TopBar({
             userName={userName}
             userEmail={userEmail}
             avatarUrl={avatarUrl}
+            isAdmin={isAdmin}
             align="right"
           />
         </div>

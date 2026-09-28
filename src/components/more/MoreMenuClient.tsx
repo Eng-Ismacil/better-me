@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Icon from "@/components/ui/Icon";
+import InstallAppButton from "@/components/ui/InstallAppButton";
 import { useTranslation } from "@/lib/i18n";
 
 interface MoreMenuClientProps {
@@ -507,6 +508,8 @@ export default function MoreMenuClient({
             </button>
           </div>
         </div>
+
+        <InstallAppButton />
 
         {/* Haptic / Sound Feedback Toggle */}
         <div className="flex items-center justify-between border-t border-[#F0F2F5] pt-3">
