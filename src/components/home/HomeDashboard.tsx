@@ -7,6 +7,7 @@ import Icon from "@/components/ui/Icon";
 import ProgressRing from "@/components/ui/ProgressRing";
 import ConsistencyStrip from "@/components/ui/ConsistencyStrip";
 import HabitRow from "@/components/ui/HabitRow";
+import AndroidAppDownloadCard from "@/components/home/AndroidAppDownloadCard";
 import { Habit, WeeklyConsistencyDay } from "@/types";
 import { useTranslation } from "@/lib/i18n";
 
@@ -146,6 +147,8 @@ export default function HomeDashboard({
           <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#EF4444] ring-2 ring-white" />
         </Link>
       </section>
+
+      <AndroidAppDownloadCard />
 
       {/* =========================================================================
           SECTION 2: DAILY PROGRESS HERO CARD (With User-Provided Illustration)
