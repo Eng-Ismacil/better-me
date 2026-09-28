@@ -56,14 +56,20 @@ export async function POST(req: Request) {
       resetUrl,
     });
 
-    if (!emailResult.success) {
-      console.warn("Resend email warning:", emailResult.error);
+    if (!emailResult.success && process.env.NODE_ENV === "production") {
+      await db.collection("passwordResets").deleteOne({ token });
+      return NextResponse.json(
+        { error: "Unable to send the reset email. Please try again later." },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      message: "Koodhka dib u dejinta waxaa loo diray email-kaaga.",
-      // In development or if user is demo, provide code for instant convenience
+      emailSent: emailResult.success,
+      message: emailResult.success
+        ? "Koodhka dib u dejinta waxaa loo diray email-kaaga."
+        : "Development reset code generated.",
       demoCode: process.env.NODE_ENV !== "production" ? code : undefined,
     });
   } catch (err: unknown) {

@@ -30,17 +30,22 @@ export default function ForgotPasswordPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send reset email");
 
+      const demoCode = typeof data.demoCode === "string" ? data.demoCode : null;
       setMessage({
         type: "success",
-        text:
-          language === "so"
+        text: demoCode && !data.emailSent
+          ? language === "so"
+            ? `Email-ka lama dirin; koodhka deegaanka waa ${demoCode}.`
+            : `Email could not be sent; your local reset code is ${demoCode}.`
+          : language === "so"
             ? "Koodhka dib u dejinta waxaa lagugu soo diray email-kaaga adoo adeegsanaya Resend! Fadlan hubi sanduuqaaga."
             : "Password reset code sent via Resend! Please check your email inbox.",
       });
 
-      // Auto redirect to reset page with prefilled email after 2 seconds
       setTimeout(() => {
-        router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+        const params = new URLSearchParams({ email: email.trim() });
+        if (demoCode) params.set("code", demoCode);
+        router.push(`/reset-password?${params.toString()}`);
       }, 1500);
     } catch (err: unknown) {
       const error = err as Error;

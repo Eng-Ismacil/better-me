@@ -1,7 +1,7 @@
 import { MongoClient, Db } from "mongodb";
 
 const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/betterme";
-const dbName = process.env.MONGODB_DB || "betterme";
+const dbName = (process.env.MONGODB_DB || "betterme").toLowerCase();
 
 let cachedClient: MongoClient | null = null;
 let cachedDb: Db | null = null;
