@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#007AFF" />
+    <title>BetterMe · Offline</title>
+    <style>
+      :root { color-scheme: light; font-family: Arial, sans-serif; color: #111827; background: #f5f8fc; }
+      body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; box-sizing: border-box; }
+      main { width: min(100%, 380px); padding: 32px 24px; border: 1px solid #e0e7ef; border-radius: 18px; background: white; text-align: center; }
+      img { width: 52px; height: 52px; }
+      h1 { margin: 20px 0 8px; font-size: 21px; }
+      p { margin: 0; color: #667085; font-size: 14px; line-height: 1.6; }
+      button { margin-top: 22px; min-height: 42px; padding: 0 18px; border: 0; border-radius: 9px; color: white; background: #007aff; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icon.svg" alt="BetterMe" />
+      <h1>You are offline</h1>
+      <p>Reconnect to the internet to continue using BetterMe.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+  </body>
+</html>

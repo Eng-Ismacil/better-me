@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "Small consistent actions create meaningful progress. Design healthy routines and track your daily momentum with calm precision.",
   icons: {
     icon: "/favicon.svg",
-    apple: "/icon.svg",
+    apple: "/icon-192.png",
   },
   appleWebApp: {
     capable: true,

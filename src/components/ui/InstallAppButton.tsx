@@ -1,50 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Icon from "@/components/ui/Icon";
 import { useTranslation } from "@/lib/i18n";
-
-interface InstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
-}
+import { usePwaInstall } from "@/components/ui/PwaInstallProvider";
 
 export default function InstallAppButton() {
   const { language } = useTranslation();
   const so = language === "so";
-  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
-  const [instructionsOpen, setInstructionsOpen] = useState(false);
-  const [installed, setInstalled] = useState(false);
-
-  useEffect(() => {
-    const onBeforeInstall = (event: Event) => {
-      event.preventDefault();
-      setInstallPrompt(event as InstallPromptEvent);
-    };
-    const onInstalled = () => {
-      setInstalled(true);
-      setInstallPrompt(null);
-      setInstructionsOpen(false);
-    };
-
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", onInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
-  }, []);
-
-  const install = async () => {
-    if (!installPrompt) {
-      setInstructionsOpen((open) => !open);
-      return;
-    }
-    await installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-    if (choice.outcome === "accepted") setInstalled(true);
-    setInstallPrompt(null);
-  };
+  const { canInstall, installed, install } = usePwaInstall();
 
   return (
     <div className="border-t border-[#F0F2F5] pt-3">
@@ -65,25 +29,13 @@ export default function InstallAppButton() {
         <button
           type="button"
           onClick={() => void install()}
-          disabled={installed}
+          disabled={installed || !canInstall}
           className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[#168A67] px-3 text-[11px] font-bold text-white disabled:bg-[#EAF8F2] disabled:text-[#168A67]"
         >
           <Icon name={installed ? "check" : "download"} size={15} />
           {installed ? (so ? "La rakibay" : "Installed") : so ? "Rakib" : "Install"}
         </button>
       </div>
-      {instructionsOpen && !installed && (
-        <div className="mt-3 rounded-lg border border-[#E7ECF3] bg-[#FAFBFD] p-3 text-[11px] leading-5 text-[#475467]">
-          <p className="font-bold text-[#111827]">
-            {so ? "Ku rakib browser-kaaga" : "Install from your browser"}
-          </p>
-          <p className="mt-1">
-            {so
-              ? "Android: fur menu-ga browser-ka oo dooro Install app ama Add to Home screen. iPhone: Share → Add to Home Screen."
-              : "Android: open your browser menu and choose Install app or Add to Home screen. iPhone: Share → Add to Home Screen."}
-          </p>
-        </div>
-      )}
     </div>
   );
 }
