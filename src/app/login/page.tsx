@@ -3,11 +3,16 @@
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import BetterMeLogo from "@/components/brand/BetterMeLogo";
+import AuthLayout from "@/components/auth/AuthLayout";
+import AuthInput from "@/components/auth/AuthInput";
+import PrimaryButton from "@/components/auth/PrimaryButton";
 import Icon from "@/components/ui/Icon";
+import { useTranslation } from "@/lib/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { language } = useTranslation();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -31,21 +36,20 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Login failed");
+        throw new Error(data.error || "Login failed. Please check your credentials.");
       }
 
       if (data.requiresTwoFactor) {
-        // Admin 2FA required
         setTwoFactorToken(data.twoFactorToken);
         setDevOtp(data.devOtp);
         setNeeds2FA(true);
         setOtp(["", "", "", "", "", ""]);
-        setTimeout(() => otpRefs.current[0]?.focus(), 100);
+        setTimeout(() => otpRefs.current[0]?.focus(), 150);
         return;
       }
 
@@ -53,9 +57,35 @@ export default function LoginPage() {
       router.refresh();
     } catch (err: unknown) {
       const e = err as Error;
-      setError(e.message || "Something went wrong");
+      setError(e.message || "Invalid credentials");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setError("");
+    setDemoLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "ismacil.dahir@example.com",
+          password: "password123",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Demo login failed");
+
+      router.push("/home");
+      router.refresh();
+    } catch (err: unknown) {
+      const e = err as Error;
+      setError(e.message || "Failed to log in as demo user");
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -81,275 +111,210 @@ export default function LoginPage() {
       setOtp(text.split(""));
       otpRefs.current[5]?.focus();
     }
-    e.preventDefault();
   };
 
   const handleVerify2FA = async (e: React.FormEvent) => {
     e.preventDefault();
-    const code = otp.join("");
-    if (code.length < 6) { setError("Please enter the complete 6-digit code"); return; }
-    setVerifying(true);
+    const fullOtp = otp.join("");
+    if (fullOtp.length < 6) {
+      setError(
+        language === "so"
+          ? "Fadlan geli dhammaan 6-da lambar ee koodhka"
+          : "Please enter the complete 6-digit code"
+      );
+      return;
+    }
+
     setError("");
+    setVerifying(true);
     try {
       const res = await fetch("/api/auth/verify-2fa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: twoFactorToken, otp: code }),
+        body: JSON.stringify({ token: twoFactorToken, otp: fullOtp }),
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Verification failed");
+      if (!res.ok) {
+        throw new Error(data.error || "Invalid 2FA code");
+      }
+
       router.push(data.redirect || "/home");
       router.refresh();
     } catch (err: unknown) {
-      setError((err as Error).message);
+      const e = err as Error;
+      setError(e.message || "Failed to verify 2FA code");
     } finally {
       setVerifying(false);
     }
   };
 
-  const handleDemoLogin = async () => {
-    setError("");
-    setDemoLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isDemo: true }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Demo login failed");
-      }
-
-      router.push("/home");
-      router.refresh();
-    } catch (err: unknown) {
-      const e = err as Error;
-      setError(e.message || "Failed to start demo session");
-    } finally {
-      setDemoLoading(false);
-    }
-  };
-
-  // ====== 2FA Screen ======
-  if (needs2FA) {
-    return (
-      <main className="flex-1 w-full bg-[#FCF9F8] pt-safe pb-safe max-w-lg mx-auto flex flex-col justify-between min-h-screen px-6 py-8">
-        <div className="flex flex-col items-center pt-4">
-          <BetterMeLogo size={36} />
-          <div className="mt-6 w-14 h-14 rounded-full bg-[#0B6EF3]/10 border border-[#0B6EF3]/20 flex items-center justify-center">
-            <Icon name="shield_lock" size={28} className="text-[#0B6EF3]" />
-          </div>
-          <h1 className="text-[22px] font-bold text-[#101010] mt-4 tracking-tight">
-            Admin Verification
-          </h1>
-          <p className="text-[14px] text-[#667085] mt-1 text-center max-w-xs">
-            A 6-digit code was sent to <span className="font-semibold text-[#101010]">{email}</span>
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E5E7EB] my-auto">
-          {error && (
-            <div className="mb-4 p-3 rounded-xl bg-[#ffdad6]/50 border border-[#ffdad6] text-[#EF4444] text-[13px] flex items-center gap-2">
-              <Icon name="error" size={18} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {devOtp && (
-            <div className="mb-4 p-3 rounded-xl bg-[#FFF7ED] border border-[#FDE68A] text-[#D97706] text-[13px] flex items-center gap-2">
-              <Icon name="developer_mode" size={18} />
-              <span>Dev mode OTP: <strong className="font-mono text-[16px] tracking-widest">{devOtp}</strong></span>
-            </div>
-          )}
-
-          <form onSubmit={handleVerify2FA} className="flex flex-col gap-5">
-            <div className="flex flex-col gap-2">
-              <p className="text-[13px] font-semibold text-[#101010] text-center">Enter verification code</p>
-              <div className="flex gap-2 justify-center" onPaste={handleOtpPaste}>
-                {otp.map((digit, i) => (
-                  <input
-                    key={i}
-                    ref={(el) => { otpRefs.current[i] = el; }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(i, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                    className={`w-11 h-14 text-center text-[22px] font-bold rounded-xl border-2 bg-[#f6f3f2] outline-none transition-all ${
-                      digit ? "border-[#0B6EF3] bg-[#EFF6FF] text-[#0B6EF3]" : "border-[#E5E7EB] text-[#101010]"
-                    } focus:border-[#0B6EF3] focus:bg-[#EFF6FF]`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={verifying || otp.join("").length < 6}
-              className="w-full h-[48px] bg-[#0B6EF3] text-white rounded-full font-semibold text-[14px] flex items-center justify-center gap-2 hover:bg-[#0958c7] active:scale-[0.98] transition-all shadow-xs disabled:opacity-60"
-            >
-              {verifying ? (
-                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Icon name="verified_user" size={18} />
-                  <span>Verify & Sign In</span>
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => { setNeeds2FA(false); setError(""); }}
-              className="text-center text-[13px] text-[#667085] hover:text-[#101010] transition-colors"
-            >
-              ← Back to login
-            </button>
-          </form>
-        </div>
-
-        <div className="text-center pt-4">
-          <p className="text-[12px] text-[#667085]">
-            Didn&apos;t receive the code? Check your spam folder or{" "}
-            <button
-              type="button"
-              onClick={handleSubmit.bind(null, { preventDefault: () => {} } as React.FormEvent)}
-              className="text-[#007AFF] font-semibold hover:underline"
-            >
-              resend
-            </button>
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  // ====== Normal Login Screen ======
   return (
-    <main className="flex-1 w-full bg-[#FCF9F8] pt-safe pb-safe max-w-lg mx-auto flex flex-col justify-between min-h-screen px-6 py-8">
-      {/* Header */}
-      <div className="flex flex-col items-center pt-4">
-        <BetterMeLogo size={36} />
-        <h1 className="text-[24px] font-bold text-[#101010] mt-6 tracking-tight font-[family-name:var(--font-headline)]">
-          Welcome back
-        </h1>
-        <p className="text-[14px] text-[#667085] mt-1 text-center">
-          Continue your mindful momentum with BetterMe
-        </p>
-      </div>
+    <AuthLayout
+      showLanguageToggle={true}
+      showBackLink={true}
+      backHref="/welcome"
+      maxWidth="sm"
+    >
+      <div className="flex flex-col gap-6 animate-in fade-in duration-300">
+        {/* Title & Subtitle Header */}
+        <div className="flex flex-col gap-1.5 text-center sm:text-left">
+          <h1 className="text-[26px] sm:text-[28px] font-extrabold text-[#111827] tracking-tight font-[family-name:var(--font-headline)]">
+            {needs2FA
+              ? language === "so"
+                ? "Xaqiijinta Amniga (2FA)"
+                : "Two-Factor Authentication"
+              : language === "so"
+              ? "Ku soo dhawoow"
+              : "Welcome back"}
+          </h1>
+          <p className="text-[13px] sm:text-[14px] text-[#667085] leading-relaxed">
+            {needs2FA
+              ? language === "so"
+                ? "Koodh 6-lambar ah ayaa loo diray email-kaaga."
+                : "Enter the 6-digit verification code sent to your email."
+              : language === "so"
+              ? "Sii wad horumarkaaga caadooyinka BetterMe."
+              : "Continue your mindful momentum with BetterMe."}
+          </p>
+        </div>
 
-      {/* Login Card Form */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E5E7EB] my-auto">
+        {/* Global Error Banner */}
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-[#ffdad6]/50 border border-[#ffdad6] text-[#EF4444] text-[13px] flex items-center gap-2">
-            <Icon name="error" size={18} />
+          <div className="p-3.5 rounded-xl bg-[#FEF2F2] border border-[#EF4444]/25 text-[#EF4444] text-[13px] font-semibold flex items-center gap-2.5 animate-in fade-in">
+            <Icon name="error" size={18} className="shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[13px] font-semibold text-[#101010]">
-              Email Address
-            </label>
-            <div className="relative flex items-center">
-              <Icon
-                name="mail"
-                size={18}
-                className="absolute left-3.5 text-[#717786]"
-              />
-              <input
+        {/* 2FA OTP SCREEN */}
+        {needs2FA ? (
+          <form onSubmit={handleVerify2FA} className="flex flex-col gap-5">
+            <div className="bg-white rounded-2xl border border-[#E7ECF3] p-5 shadow-2xs flex flex-col gap-4">
+              <label className="text-[13px] font-bold text-[#111827] text-center block">
+                {language === "so" ? "Koodhka Xaqiijinta" : "Verification Code"}
+              </label>
+
+              {/* 6 Digit OTP Inputs */}
+              <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
+                {otp.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    ref={(el) => {
+                      otpRefs.current[idx] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                    className="w-11 h-13 text-center text-[22px] font-black bg-[#FAFBFD] border border-[#E7ECF3] rounded-xl focus:border-[#0B6EF3] focus:bg-white focus:ring-3 focus:ring-[#0B6EF3]/15 outline-none transition-all"
+                  />
+                ))}
+              </div>
+
+              {devOtp && (
+                <div className="p-2.5 bg-[#EFF6FF] border border-[#0B6EF3]/20 rounded-xl text-center text-[12px] text-[#0B6EF3] font-bold">
+                  Demo Code: <span className="font-mono text-[14px]">{devOtp}</span>
+                </div>
+              )}
+            </div>
+
+            <PrimaryButton type="submit" loading={verifying}>
+              {language === "so" ? "Xaqiiji & Gal" : "Verify & Continue"}
+            </PrimaryButton>
+
+            <button
+              type="button"
+              onClick={() => setNeeds2FA(false)}
+              className="text-[13px] text-[#667085] hover:text-[#111827] text-center font-semibold transition-colors"
+            >
+              {language === "so" ? "← Ku noqo gelitaanka" : "← Back to Login"}
+            </button>
+          </form>
+        ) : (
+          /* STANDARD LOGIN FORM */
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {/* Integrated Card Container */}
+            <div className="bg-white rounded-2xl border border-[#E7ECF3] p-5 sm:p-6 shadow-2xs flex flex-col gap-4">
+              {/* Email Field */}
+              <AuthInput
+                label={language === "so" ? "Cinwaanka Email-ka" : "Email Address"}
+                iconName="mail"
                 type="email"
                 required
+                autoComplete="email"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                className="w-full h-11 pl-10 pr-3.5 bg-[#f6f3f2] rounded-xl text-[14px] text-[#101010] placeholder:text-[#717786] border border-transparent focus:border-[#007AFF] focus:bg-white outline-none transition-all"
               />
-            </div>
-          </div>
 
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[13px] font-semibold text-[#101010]">
-                Password
-              </label>
-              <Link
-                href="/forgot-password"
-                className="text-[12px] text-[#007AFF] hover:underline"
-              >
-                Forgot?
-              </Link>
-            </div>
-            <div className="relative flex items-center">
-              <Icon
-                name="lock"
-                size={18}
-                className="absolute left-3.5 text-[#717786]"
-              />
-              <input
-                type="password"
+              {/* Password Field */}
+              <AuthInput
+                label={language === "so" ? "Furaha Sirta ah" : "Password"}
+                iconName="lock"
+                isPassword={true}
                 required
+                autoComplete="current-password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full h-11 pl-10 pr-3.5 bg-[#f6f3f2] rounded-xl text-[14px] text-[#101010] placeholder:text-[#717786] border border-transparent focus:border-[#007AFF] focus:bg-white outline-none transition-all"
+                rightElement={
+                  <Link
+                    href="/forgot-password"
+                    className="text-[12px] text-[#0B6EF3] hover:underline font-bold"
+                  >
+                    {language === "so" ? "Ma ilowday?" : "Forgot?"}
+                  </Link>
+                }
               />
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-[48px] mt-2 bg-[#007AFF] text-white rounded-full font-semibold text-[14px] flex items-center justify-center gap-2 hover:bg-[#0070eb] active:scale-[0.98] transition-all shadow-xs"
-          >
-            {loading ? (
-              <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <span>Sign In</span>
-            )}
-          </button>
-        </form>
+            {/* Primary Action Button */}
+            <PrimaryButton type="submit" loading={loading}>
+              {language === "so" ? "Gal Akoonka (Sign In)" : "Sign In"}
+            </PrimaryButton>
 
-        <div className="relative my-5 flex items-center justify-center">
-          <div className="w-full border-t border-[#E5E7EB]" />
-          <span className="absolute bg-white px-3 text-[12px] text-[#717786]">
-            or explore
-          </span>
-        </div>
+            {/* Subtle Divider */}
+            <div className="flex items-center gap-3 my-1">
+              <div className="flex-1 h-px bg-[#E7ECF3]" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">
+                {language === "so" ? "ama" : "or"}
+              </span>
+              <div className="flex-1 h-px bg-[#E7ECF3]" />
+            </div>
 
-        {/* 1-Click Demo Login with Stitch Persona */}
-        <button
-          type="button"
-          onClick={handleDemoLogin}
-          disabled={demoLoading}
-          className="w-full h-[46px] bg-[#EFF6FF] border border-[#d8e2ff] text-[#007AFF] rounded-full font-semibold text-[13px] flex items-center justify-center gap-2 hover:bg-[#d8e2ff]/50 active:scale-[0.98] transition-all"
-        >
-          <Icon name="verified" size={17} className="text-[#007AFF]" />
-          {demoLoading ? (
-            <span>Preparing Persona...</span>
-          ) : (
-            <span>Sign In as Demo User (Ismacil Dahir)</span>
-          )}
-        </button>
+            {/* Secondary Action: Demo Account */}
+            <PrimaryButton
+              type="button"
+              variant="secondary"
+              loading={demoLoading}
+              onClick={handleDemoLogin}
+            >
+              <Icon name="bolt" size={17} className="text-[#0B6EF3]" />
+              <span>
+                {language === "so"
+                  ? "Ku tijaabi Akoonka Demo-ga"
+                  : "Explore with Demo Account"}
+              </span>
+            </PrimaryButton>
+          </form>
+        )}
+
+        {/* Footer Link */}
+        {!needs2FA && (
+          <p className="text-[13px] text-center text-[#667085] mt-1">
+            {language === "so" ? "Miyaadan lahayn akoon? " : "Don't have an account? "}
+            <Link
+              href="/signup"
+              className="text-[#0B6EF3] font-bold hover:underline"
+            >
+              {language === "so" ? "Abuur Hadda" : "Create one now"}
+            </Link>
+          </p>
+        )}
       </div>
-
-      {/* Footer Switch to Sign Up */}
-      <div className="text-center pt-4">
-        <p className="text-[13px] text-[#667085]">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/signup"
-            className="text-[#007AFF] font-semibold hover:underline"
-          >
-            Create one
-          </Link>
-        </p>
-      </div>
-    </main>
+    </AuthLayout>
   );
 }

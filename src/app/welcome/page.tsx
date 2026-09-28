@@ -1,101 +1,108 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
-import BetterMeLogo from "@/components/brand/BetterMeLogo";
+import AuthLayout from "@/components/auth/AuthLayout";
+import WelcomeIllustration from "@/components/auth/WelcomeIllustration";
+import BenefitItem from "@/components/auth/BenefitItem";
+import PrimaryButton from "@/components/auth/PrimaryButton";
 import Icon from "@/components/ui/Icon";
+import { useTranslation } from "@/lib/i18n";
 
 export default function WelcomePage() {
+  const { language } = useTranslation();
+
+  const benefits = [
+    {
+      title: language === "so" ? "Falanqayn Caqli leh" : "Smart habit insights",
+      subtitle: language === "so" ? "Xogta horumarka" : "Health score & trends",
+      icon: "auto_graph",
+      color: "#0B6EF3",
+    },
+    {
+      title: language === "so" ? "Habayn Deggan" : "Calm routine planning",
+      subtitle: language === "so" ? "Subax & habeen" : "Morning & evening stacks",
+      icon: "spa",
+      color: "#20C773",
+    },
+    {
+      title: language === "so" ? "Dardarta Streak-ka" : "Streak recovery",
+      subtitle: language === "so" ? "Ha jabin guusha" : "Never miss twice",
+      icon: "cached",
+      color: "#8B5CF6",
+    },
+  ];
+
   return (
-    <main className="flex-1 w-full bg-[#FCF9F8] pt-safe pb-safe max-w-lg mx-auto flex flex-col justify-between min-h-screen px-6 py-6 select-none">
-      {/* Top Branding: Logo & Tagline */}
-      <div className="flex flex-col items-center justify-center pt-4 pb-1 text-center">
-        <div className="h-12 w-auto mb-1 flex items-center justify-center">
-          <BetterMeLogo size={36} />
-        </div>
-        <p className="text-[11px] font-semibold tracking-wider uppercase text-[#717786] mt-0.5">
-          PROGRESS IN EVERY HABIT.
-        </p>
-      </div>
-
-      {/* Hero Visual: Growth Step Vector Illustration */}
-      <div className="w-full my-2 flex items-center justify-center">
-        <div className="relative w-full max-w-[280px] aspect-square rounded-2xl bg-white shadow-sm flex items-center justify-center overflow-hidden border border-[#E5E7EB]">
-          <div className="absolute -inset-4 bg-[#EFF6FF] rounded-full blur-2xl pointer-events-none" />
-          <Image
-            src="/images/welcome-hero.png"
-            alt="Mindful habit growth illustration"
-            width={260}
-            height={260}
-            priority
-            className="relative z-10 w-full h-full object-contain p-3 transition-transform duration-700 hover:scale-105"
-          />
-        </div>
-      </div>
-
-      {/* Narrative & Core Value Proposition */}
-      <div className="flex flex-col items-center text-center mt-1 mb-4">
-        <h1 className="font-bold text-[28px] text-[#101010] tracking-tight max-w-[280px] leading-tight font-[family-name:var(--font-headline)]">
-          Build habits that actually stick.
-        </h1>
-        <p className="text-[14px] text-[#717786] mt-2 max-w-xs leading-relaxed">
-          Small consistent actions create meaningful change. Design healthy
-          routines and track your daily momentum with calm precision.
-        </p>
-
-        {/* Value Proposition Micro-chips */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mt-4 max-w-sm">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f6f3f2] shadow-xs">
-            <Icon name="auto_graph" size={16} className="text-[#007AFF]" />
-            <span className="text-[12px] text-[#414755] font-medium">
-              Intelligent Insights
-            </span>
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f6f3f2] shadow-xs">
-            <Icon name="spa" size={16} className="text-[#22C55E]" />
-            <span className="text-[12px] text-[#414755] font-medium">
-              Calm Routine Builder
-            </span>
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f6f3f2] shadow-xs">
-            <Icon name="cached" size={16} className="text-[#007AFF]" />
-            <span className="text-[12px] text-[#414755] font-medium">
-              Smart Streak Recovery
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Call-to-Actions */}
-      <div className="flex flex-col w-full gap-2 mt-auto pt-2">
-        <Link
-          href="/signup"
-          id="getStartedBtn"
-          className="group relative w-full h-[52px] bg-[#007AFF] text-white rounded-full font-semibold text-[15px] flex items-center justify-center gap-2 shadow-sm transition-all duration-200 active:scale-[0.98] hover:bg-[#0070eb]"
-        >
-          <span>Get Started</span>
-          <Icon
-            name="arrow_forward"
-            size={18}
-            className="transition-transform duration-200 group-hover:translate-x-1"
-          />
-        </Link>
-
-        <Link
-          href="/login"
-          id="signInBtn"
-          className="w-full h-11 bg-transparent text-[#717786] font-medium text-[13px] flex items-center justify-center transition-colors duration-150 hover:text-[#101010]"
-        >
-          Already have an account?&nbsp;
-          <span className="text-[#101010] font-semibold underline decoration-[#E5E7EB] underline-offset-4">
-            Sign in
+    <AuthLayout showLanguageToggle={true} showBackLink={false} maxWidth="sm">
+      <div className="flex flex-col items-center text-center animate-in fade-in duration-300">
+        {/* Small Eyebrow Badge */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EFF6FF] border border-[#0B6EF3]/20 text-[#0B6EF3] text-[11px] font-extrabold uppercase tracking-wider mb-1 select-none">
+          <span className="w-2 h-2 rounded-full bg-[#0B6EF3] animate-pulse" />
+          <span>
+            {language === "so"
+              ? "HORUMAR CAADO WALBA"
+              : "PROGRESS IN EVERY HABIT"}
           </span>
-        </Link>
-      </div>
+        </div>
 
-      {/* iOS Home Indicator */}
-      <div className="fixed bottom-0 inset-x-0 pb-safe flex justify-center pointer-events-none z-50">
-        <div className="w-32 h-1 mb-2 bg-[#101010]/20 rounded-full" />
+        {/* Hero Purpose-Built Habit Growth Illustration */}
+        <WelcomeIllustration />
+
+        {/* Strong Headline */}
+        <h1 className="text-[28px] sm:text-[32px] font-extrabold text-[#111827] tracking-tight leading-[1.15] font-[family-name:var(--font-headline)] mt-2">
+          {language === "so" ? (
+            <>
+              Dhis caadooyin <br />
+              <span className="text-[#0B6EF3]">dhab ahaan waara.</span>
+            </>
+          ) : (
+            <>
+              Build habits that <br />
+              <span className="text-[#0B6EF3]">actually stick.</span>
+            </>
+          )}
+        </h1>
+
+        {/* Supporting Copy */}
+        <p className="text-[13px] sm:text-[14px] text-[#667085] mt-2 max-w-[320px] leading-relaxed">
+          {language === "so"
+            ? "Tallaabooyin yaryar oo joogto ah waxay keenaan isbeddel macno leh. Dhis jadwalkaaga oo si cad ula soco guushaada."
+            : "Small consistent actions create meaningful change. Build healthy routines and track your daily progress with clarity."}
+        </p>
+
+        {/* 3 Compact Benefit Cards */}
+        <div className="grid grid-cols-3 gap-2 w-full mt-4 mb-6">
+          {benefits.map((b, idx) => (
+            <BenefitItem
+              key={idx}
+              icon={b.icon}
+              title={b.title}
+              subtitle={b.subtitle}
+              highlightColor={b.color}
+            />
+          ))}
+        </div>
+
+        {/* Primary CTA and Secondary Link */}
+        <div className="flex flex-col w-full gap-2.5">
+          <Link href="/signup" className="w-full">
+            <PrimaryButton iconName="arrow_forward">
+              {language === "so" ? "Bilow Hadda (Get Started)" : "Get Started"}
+            </PrimaryButton>
+          </Link>
+
+          <Link
+            href="/login"
+            className="text-[13px] text-[#667085] hover:text-[#111827] font-medium py-1.5 transition-colors"
+          >
+            {language === "so" ? "Miyaad akoon leedahay? " : "Already have an account? "}
+            <span className="text-[#0B6EF3] font-bold hover:underline">
+              {language === "so" ? "Gal Akoonka" : "Sign in"}
+            </span>
+          </Link>
+        </div>
       </div>
-    </main>
+    </AuthLayout>
   );
 }
