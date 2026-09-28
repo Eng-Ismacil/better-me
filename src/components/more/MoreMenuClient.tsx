@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Icon from "@/components/ui/Icon";
-import InstallAppButton from "@/components/ui/InstallAppButton";
 import { useTranslation } from "@/lib/i18n";
 import { clearAdminStatus } from "@/lib/adminStatus";
 
@@ -33,6 +32,8 @@ interface MoreMenuClientProps {
   }>;
 }
 
+type MoreCategory = "all" | "growth" | "insights" | "account";
+
 export default function MoreMenuClient({
   user,
   stats = {
@@ -53,6 +54,8 @@ export default function MoreMenuClient({
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [soundEffects, setSoundEffects] = useState(true);
+  const [category, setCategory] = useState<MoreCategory>("growth");
+  const [navigationSearch, setNavigationSearch] = useState("");
 
   // Core navigation feature items categorized into logical groups
   const dailyGrowthTools = [
@@ -174,6 +177,18 @@ export default function MoreMenuClient({
         ]
       : []),
   ];
+
+  const allNavigationItems = [
+    ...dailyGrowthTools,
+    ...insightsAndMastery,
+    ...accountAndSecurity,
+  ];
+  const searchTerm = navigationSearch.trim().toLowerCase();
+  const searchResults = searchTerm
+    ? allNavigationItems.filter((item) =>
+        `${item.label} ${item.desc}`.toLowerCase().includes(searchTerm)
+      )
+    : [];
 
   const faqs = [
     {
@@ -361,9 +376,83 @@ export default function MoreMenuClient({
         </div>
       </section>
 
+      <section className="sticky top-[4.5rem] z-20 flex flex-col gap-3 rounded-xl border border-[#E7ECF3] bg-[#FAFBFD]/95 p-3 backdrop-blur-md">
+        <label className="relative block">
+          <Icon
+            name="search"
+            size={18}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]"
+          />
+          <input
+            type="search"
+            value={navigationSearch}
+            onChange={(event) => setNavigationSearch(event.target.value)}
+            placeholder={language === "so" ? "Raadi bog ama adeeg..." : "Find a page or tool..."}
+            className="min-h-11 w-full rounded-lg border border-[#D0D5DD] bg-white pl-10 pr-3 text-[13px] outline-none focus:border-[#0B6EF3]"
+          />
+        </label>
+        <div role="tablist" aria-label={language === "so" ? "Qaybaha menu-ga" : "Menu categories"} className="grid grid-cols-4 gap-1 rounded-lg bg-[#EEF1F5] p-1">
+          {([
+            ["growth", language === "so" ? "Horumar" : "Growth", "trending_up"],
+            ["insights", language === "so" ? "Falanqayn" : "Insights", "monitoring"],
+            ["account", language === "so" ? "Akoon" : "Account", "account_circle"],
+            ["all", language === "so" ? "Dhammaan" : "All", "apps"],
+          ] as const).map(([value, label, icon]) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={category === value}
+              onClick={() => {
+                setCategory(value);
+                setNavigationSearch("");
+              }}
+              className={`flex min-h-10 min-w-0 flex-col items-center justify-center gap-0.5 rounded-md px-1 text-[10px] font-bold transition-colors sm:flex-row sm:gap-1.5 sm:text-[11px] ${
+                category === value
+                  ? "bg-white text-[#0B6EF3] shadow-sm"
+                  : "text-[#667085] hover:text-[#344054]"
+              }`}
+            >
+              <Icon name={icon} size={15} />
+              <span className="truncate">{label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {searchTerm ? (
+        <section className="flex flex-col gap-2.5" aria-live="polite">
+          <h3 className="px-1 text-[12px] font-extrabold uppercase text-[#667085]">
+            {language === "so" ? `Natiijooyinka (${searchResults.length})` : `Results (${searchResults.length})`}
+          </h3>
+          {searchResults.length ? searchResults.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-3 rounded-xl border border-[#E7ECF3] bg-white p-3.5 transition-colors hover:border-[#0B6EF3]/40 hover:bg-[#FAFCFF]"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ background: item.bg, color: item.color }}>
+                <Icon name={item.icon} size={19} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-bold text-[#111827]">{item.label}</span>
+                <span className="block truncate text-[11px] text-[#667085]">{item.desc}</span>
+              </span>
+              <Icon name="chevron_right" size={17} className="shrink-0 text-[#98A2B3]" />
+            </Link>
+          )) : (
+            <p className="rounded-xl border border-dashed border-[#D0D5DD] bg-white p-6 text-center text-[12px] text-[#667085]">
+              {language === "so" ? "Boggan lama helin." : "No matching page found."}
+            </p>
+          )}
+        </section>
+      ) : (
+        <>
+
       {/* =========================================================================
           SECTION 3: DAILY GROWTH & HABIT TOOLS
           ========================================================================= */}
+      {(category === "all" || category === "growth") && (
       <section className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between px-1">
           <span className="text-[12px] font-extrabold uppercase tracking-wider text-[#667085]">
@@ -410,10 +499,12 @@ export default function MoreMenuClient({
           ))}
         </div>
       </section>
+        )}
 
       {/* =========================================================================
           SECTION 4: INSIGHTS, ACHIEVEMENTS & ALERTS
           ========================================================================= */}
+        {(category === "all" || category === "insights") && (
       <section className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between px-1">
           <span className="text-[12px] font-extrabold uppercase tracking-wider text-[#667085]">
@@ -460,10 +551,12 @@ export default function MoreMenuClient({
           ))}
         </div>
       </section>
+        )}
 
       {/* =========================================================================
           SECTION 5: APP PREFERENCES & TOGGLES
           ========================================================================= */}
+        {(category === "all" || category === "account") && (
       <section className="bg-white rounded-2xl border border-[#E7ECF3] p-4 flex flex-col gap-4 shadow-2xs">
         <span className="text-[12px] font-extrabold uppercase tracking-wider text-[#667085]">
           {language === "so" ? "Dookhyada App-ka" : "App Preferences"}
@@ -511,8 +604,6 @@ export default function MoreMenuClient({
           </div>
         </div>
 
-        <InstallAppButton />
-
         {/* Haptic / Sound Feedback Toggle */}
         <div className="flex items-center justify-between border-t border-[#F0F2F5] pt-3">
           <div className="flex items-center gap-3">
@@ -544,10 +635,12 @@ export default function MoreMenuClient({
           </button>
         </div>
       </section>
+        )}
 
       {/* =========================================================================
           SECTION 6: DATA EXPORT & FREQUENTLY ASKED QUESTIONS
           ========================================================================= */}
+        {(category === "all" || category === "account") && (
       <section className="bg-white rounded-2xl border border-[#E7ECF3] p-4 flex flex-col gap-3.5 shadow-2xs">
         <span className="text-[12px] font-extrabold uppercase tracking-wider text-[#667085]">
           {language === "so" ? "Kaydka & Xogtaada" : "Data & Knowledge"}
@@ -625,10 +718,12 @@ export default function MoreMenuClient({
           ))}
         </div>
       </section>
+        )}
 
       {/* =========================================================================
           SECTION 7: ACCOUNT & LOGOUT ACTIONS
           ========================================================================= */}
+        {(category === "all" || category === "account") && (
       <section className="bg-white rounded-2xl border border-[#E7ECF3] p-4 flex flex-col gap-2.5 shadow-2xs">
         <span className="text-[12px] font-extrabold uppercase tracking-wider text-[#667085]">
           {language === "so" ? "Akoonka & Ka Bixitaanka" : "Account Session"}
@@ -670,6 +765,9 @@ export default function MoreMenuClient({
           <span>{language === "so" ? "Ka Bax Akoonka (Log Out)" : "Sign Out"}</span>
         </button>
       </section>
+      )}
+        </>
+      )}
 
       {/* =========================================================================
           SECTION 8: BRAND FOOTER & SYSTEM STATUS
