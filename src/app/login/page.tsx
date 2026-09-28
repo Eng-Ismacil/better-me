@@ -17,14 +17,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
 
   // 2FA state
   const [needs2FA, setNeeds2FA] = useState(false);
   const [twoFactorToken, setTwoFactorToken] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [verifying, setVerifying] = useState(false);
-  const [devOtp, setDevOtp] = useState<string | undefined>(undefined);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,7 +44,6 @@ export default function LoginPage() {
 
       if (data.requiresTwoFactor) {
         setTwoFactorToken(data.twoFactorToken);
-        setDevOtp(data.devOtp);
         setNeeds2FA(true);
         setOtp(["", "", "", "", "", ""]);
         setTimeout(() => otpRefs.current[0]?.focus(), 150);
@@ -60,32 +57,6 @@ export default function LoginPage() {
       setError(e.message || "Invalid credentials");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setError("");
-    setDemoLoading(true);
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: "ismacil.dahir@example.com",
-          password: "password123",
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Demo login failed");
-
-      router.push("/home");
-      router.refresh();
-    } catch (err: unknown) {
-      const e = err as Error;
-      setError(e.message || "Failed to log in as demo user");
-    } finally {
-      setDemoLoading(false);
     }
   };
 
@@ -213,12 +184,6 @@ export default function LoginPage() {
                   />
                 ))}
               </div>
-
-              {devOtp && (
-                <div className="p-2.5 bg-[#EFF6FF] border border-[#0B6EF3]/20 rounded-xl text-center text-[12px] text-[#0B6EF3] font-bold">
-                  Demo Code: <span className="font-mono text-[14px]">{devOtp}</span>
-                </div>
-              )}
             </div>
 
             <PrimaryButton type="submit" loading={verifying}>
@@ -234,7 +199,7 @@ export default function LoginPage() {
             </button>
           </form>
         ) : (
-          /* STANDARD LOGIN FORM */
+          /* STANDARD PRODUCTION LOGIN FORM */
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {/* Integrated Card Container */}
             <div className="bg-white rounded-2xl border border-[#E7ECF3] p-5 sm:p-6 shadow-2xs flex flex-col gap-4">
@@ -274,30 +239,6 @@ export default function LoginPage() {
             {/* Primary Action Button */}
             <PrimaryButton type="submit" loading={loading}>
               {language === "so" ? "Gal Akoonka (Sign In)" : "Sign In"}
-            </PrimaryButton>
-
-            {/* Subtle Divider */}
-            <div className="flex items-center gap-3 my-1">
-              <div className="flex-1 h-px bg-[#E7ECF3]" />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">
-                {language === "so" ? "ama" : "or"}
-              </span>
-              <div className="flex-1 h-px bg-[#E7ECF3]" />
-            </div>
-
-            {/* Secondary Action: Demo Account */}
-            <PrimaryButton
-              type="button"
-              variant="secondary"
-              loading={demoLoading}
-              onClick={handleDemoLogin}
-            >
-              <Icon name="bolt" size={17} className="text-[#0B6EF3]" />
-              <span>
-                {language === "so"
-                  ? "Ku tijaabi Akoonka Demo-ga"
-                  : "Explore with Demo Account"}
-              </span>
             </PrimaryButton>
           </form>
         )}

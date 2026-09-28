@@ -5,6 +5,9 @@ const resendFrom = process.env.RESEND_FROM || "BetterMe <onboarding@resend.dev>"
 
 export const resend = new Resend(resendApiKey);
 
+/**
+ * Sends a world-class, premium HTML email for Password Reset OTP
+ */
 export async function sendPasswordResetEmail({
   toEmail,
   userName,
@@ -19,67 +22,186 @@ export async function sendPasswordResetEmail({
   try {
     const htmlContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
         <head>
           <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>BetterMe Password Reset</title>
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f6f3f2; margin: 0; padding: 24px; color: #101010; }
-            .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-            .header { background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%); padding: 32px 24px; text-align: center; color: white; }
-            .header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-            .header p { margin: 6px 0 0 0; opacity: 0.9; font-size: 14px; }
-            .body { padding: 32px 28px; }
-            .code-box { background: #EFF6FF; border: 2px dashed #007AFF; border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0; }
-            .code { font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #007AFF; }
-            .btn { display: inline-block; background-color: #007AFF; color: #ffffff !important; padding: 14px 28px; border-radius: 30px; font-weight: 700; text-decoration: none; text-align: center; margin: 16px 0; }
-            .footer { padding: 20px; text-align: center; font-size: 12px; color: #667085; border-top: 1px solid #f3f4f6; }
-            .warning { font-size: 12px; color: #667085; line-height: 1.5; margin-top: 20px; }
+            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@700&display=swap');
+            body {
+              font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+              background-color: #FAFBFD;
+              margin: 0;
+              padding: 32px 16px;
+              color: #111827;
+              -webkit-font-smoothing: antialiased;
+            }
+            .wrapper {
+              max-width: 520px;
+              margin: 0 auto;
+              background: #ffffff;
+              border-radius: 24px;
+              overflow: hidden;
+              border: 1px solid #E7ECF3;
+              box-shadow: 0 12px 36px -6px rgba(11, 110, 243, 0.08), 0 4px 16px -2px rgba(0, 0, 0, 0.03);
+            }
+            .header-banner {
+              background: linear-gradient(135deg, #0B6EF3 0%, #0958C7 50%, #04388A 100%);
+              padding: 36px 32px 28px;
+              text-align: center;
+              color: #ffffff;
+            }
+            .brand-pill {
+              display: inline-flex;
+              align-items: center;
+              background: rgba(255, 255, 255, 0.18);
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              padding: 4px 14px;
+              border-radius: 9999px;
+              font-size: 11px;
+              font-weight: 800;
+              letter-spacing: 1.5px;
+              text-transform: uppercase;
+              margin-bottom: 12px;
+            }
+            .header-title {
+              margin: 0;
+              font-size: 24px;
+              font-weight: 800;
+              letter-spacing: -0.5px;
+            }
+            .header-sub {
+              margin: 6px 0 0;
+              font-size: 13px;
+              opacity: 0.9;
+            }
+            .content-body {
+              padding: 36px 32px 28px;
+            }
+            .greeting {
+              font-size: 15px;
+              line-height: 1.6;
+              color: #374151;
+              margin: 0 0 20px;
+            }
+            .otp-container {
+              background: #F4F8FF;
+              border: 2px dashed #0B6EF3;
+              border-radius: 18px;
+              padding: 24px 20px;
+              text-align: center;
+              margin: 28px 0;
+            }
+            .otp-label {
+              display: block;
+              font-size: 11px;
+              font-weight: 800;
+              color: #0B6EF3;
+              text-transform: uppercase;
+              letter-spacing: 2px;
+              margin-bottom: 8px;
+            }
+            .otp-code {
+              font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+              font-size: 42px;
+              font-weight: 800;
+              letter-spacing: 10px;
+              color: #0B6EF3;
+              display: block;
+              margin: 4px 0;
+            }
+            .cta-button {
+              display: block;
+              background: #0B6EF3;
+              color: #ffffff !important;
+              padding: 14px 28px;
+              border-radius: 14px;
+              font-weight: 700;
+              font-size: 14px;
+              text-decoration: none;
+              text-align: center;
+              margin: 20px 0;
+              box-shadow: 0 4px 14px rgba(11, 110, 243, 0.25);
+            }
+            .security-box {
+              background: #FAFBFD;
+              border-radius: 14px;
+              padding: 16px;
+              border: 1px solid #E7ECF3;
+              margin-top: 24px;
+            }
+            .security-text {
+              font-size: 12px;
+              line-height: 1.6;
+              color: #667085;
+              margin: 0;
+            }
+            .footer-info {
+              padding: 24px 32px;
+              text-align: center;
+              font-size: 11px;
+              color: #9CA3AF;
+              border-top: 1px solid #F0F2F5;
+              background: #FAFBFD;
+            }
           </style>
         </head>
         <body>
-          <div class="container">
-            <div class="header">
-              <h1>BetterMe</h1>
-              <p>Habit & Personal Growth Companion</p>
+          <div class="wrapper">
+            <!-- Header Banner -->
+            <div class="header-banner">
+              <div class="brand-pill">🌱 BetterMe Security</div>
+              <h1 class="header-title">Dib u Dejinta Furaha Sirta</h1>
+              <p class="header-sub">Password Reset Verification Code</p>
             </div>
-            <div class="body">
-              <h2 style="font-size: 18px; margin-top: 0;">Dib u dajinta Furaha Sirta / Reset Your Password</h2>
-              <p>Ku soo dhowaw <strong>${userName || "User"}</strong>,</p>
-              <p>Waxaan helnay codsi lagu doonayo in dib loo dejiyo furahaaga sirta ah ee BetterMe. Isticmaal koodhka hoose si aad u xaqiijiso:</p>
-              
-              <div class="code-box">
-                <span style="display:block; font-size: 12px; font-weight: 600; color: #667085; margin-bottom: 6px; text-transform: uppercase;">Xaqiijinta Koodhka / Verification Code</span>
-                <span class="code">${resetCode}</span>
-              </div>
 
-              <div style="text-align: center;">
-                <a href="${resetUrl}" class="btn">Dib u Daji Furaha Sirta</a>
-              </div>
-
-              <p class="warning">
-                Haddii aadan adigu codsan dib u dajintan, fadlan iska indho-tir email-kan. Koodhkani waxa uu dhacayaa 15 daqiiqo gudahood.<br/>
-                <em>If you didn't request a password reset, you can safely ignore this email. This code expires in 15 minutes.</em>
+            <!-- Content Body -->
+            <div class="content-body">
+              <p class="greeting">
+                Kusoo dhowaw <strong>${userName || "Qiimo-badane"}</strong>,<br>
+                Waxaan helnay codsi lagu doonayo in dib loo dejiyo furahaaga sirta ah ee akoonkaaga <strong>BetterMe</strong>.
               </p>
+
+              <!-- OTP Code Display -->
+              <div class="otp-container">
+                <span class="otp-label">Koodhkaaga Xaqiijinta • Your 6-Digit Code</span>
+                <span class="otp-code">${resetCode}</span>
+              </div>
+
+              <!-- Direct Action Link -->
+              <div style="text-align: center;">
+                <a href="${resetUrl}" class="cta-button">Dib u Daji Furaha Sirta (Reset Password) →</a>
+              </div>
+
+              <!-- Security Notice -->
+              <div class="security-box">
+                <p class="security-text">
+                  ⏱️ <strong>Muhiim:</strong> Koodhkan waxa uu dhacayaa <strong>15 daqiiqo</strong> gudahood.<br>
+                  Haddii aadan adigu codsan dib u dejintan, fadlan iska indho-tir email-kan — akoonkaagu waa mid ammaan ah.<br>
+                  <em>If you didn't request a password reset, you can safely ignore this email.</em>
+                </p>
+              </div>
             </div>
-            <div class="footer">
-              Salama Hub &bull; BetterMe Application &bull; Secured with Resend
+
+            <!-- Footer Info -->
+            <div class="footer-info">
+              BetterMe Habit System &bull; Secured with Resend &bull; All Rights Reserved
             </div>
           </div>
         </body>
       </html>
     `;
 
-    // Attempt through official resend client
     const { data, error } = await resend.emails.send({
       from: resendFrom,
       to: [toEmail],
-      subject: `BetterMe - Furahaaga Sirta / Password Reset Code: ${resetCode}`,
+      subject: `BetterMe - Koodhka Dib u Dejinta / Password Reset Code: ${resetCode}`,
       html: htmlContent,
     });
 
     if (error) {
-      console.warn("Resend client error, falling back to direct API fetch:", error);
-      // Fallback direct HTTP fetch
+      console.warn("Resend client error, attempting direct API:", error);
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -89,14 +211,14 @@ export async function sendPasswordResetEmail({
         body: JSON.stringify({
           from: resendFrom,
           to: [toEmail],
-          subject: `BetterMe - Furahaaga Sirta / Password Reset Code: ${resetCode}`,
+          subject: `BetterMe - Koodhka Dib u Dejinta / Password Reset Code: ${resetCode}`,
           html: htmlContent,
         }),
       });
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.message || `Resend API failed with status ${res.status}`);
+        throw new Error(errJson.message || `Resend failed: ${res.status}`);
       }
 
       const resData = await res.json();
@@ -111,6 +233,9 @@ export async function sendPasswordResetEmail({
   }
 }
 
+/**
+ * Sends a world-class, premium HTML email for Two-Factor Authentication (2FA) OTP
+ */
 export async function sendTwoFactorCode({
   toEmail,
   userName,
@@ -123,45 +248,153 @@ export async function sendTwoFactorCode({
   try {
     const htmlContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
         <head>
           <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>BetterMe Admin 2FA Code</title>
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f6f3f2; margin: 0; padding: 24px; color: #101010; }
-            .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-            .header { background: linear-gradient(135deg, #0B6EF3 0%, #0958c7 100%); padding: 32px 24px; text-align: center; color: white; }
-            .header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-            .header p { margin: 6px 0 0 0; opacity: 0.9; font-size: 14px; }
-            .body { padding: 32px 28px; }
-            .code-box { background: #EFF6FF; border: 2px dashed #0B6EF3; border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0; }
-            .code { font-family: 'Courier New', Courier, monospace; font-size: 40px; font-weight: 800; letter-spacing: 10px; color: #0B6EF3; }
-            .footer { padding: 20px; text-align: center; font-size: 12px; color: #667085; border-top: 1px solid #f3f4f6; }
-            .warning { font-size: 12px; color: #667085; line-height: 1.5; margin-top: 20px; }
+            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@700&display=swap');
+            body {
+              font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+              background-color: #FAFBFD;
+              margin: 0;
+              padding: 32px 16px;
+              color: #111827;
+              -webkit-font-smoothing: antialiased;
+            }
+            .wrapper {
+              max-width: 520px;
+              margin: 0 auto;
+              background: #ffffff;
+              border-radius: 24px;
+              overflow: hidden;
+              border: 1px solid #E7ECF3;
+              box-shadow: 0 12px 36px -6px rgba(11, 110, 243, 0.08), 0 4px 16px -2px rgba(0, 0, 0, 0.03);
+            }
+            .header-banner {
+              background: linear-gradient(135deg, #0B6EF3 0%, #0958C7 50%, #04388A 100%);
+              padding: 36px 32px 28px;
+              text-align: center;
+              color: #ffffff;
+            }
+            .brand-pill {
+              display: inline-flex;
+              align-items: center;
+              background: rgba(255, 255, 255, 0.18);
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              padding: 4px 14px;
+              border-radius: 9999px;
+              font-size: 11px;
+              font-weight: 800;
+              letter-spacing: 1.5px;
+              text-transform: uppercase;
+              margin-bottom: 12px;
+            }
+            .header-title {
+              margin: 0;
+              font-size: 24px;
+              font-weight: 800;
+              letter-spacing: -0.5px;
+            }
+            .header-sub {
+              margin: 6px 0 0;
+              font-size: 13px;
+              opacity: 0.9;
+            }
+            .content-body {
+              padding: 36px 32px 28px;
+            }
+            .greeting {
+              font-size: 15px;
+              line-height: 1.6;
+              color: #374151;
+              margin: 0 0 20px;
+            }
+            .otp-container {
+              background: #F4F8FF;
+              border: 2px dashed #0B6EF3;
+              border-radius: 18px;
+              padding: 24px 20px;
+              text-align: center;
+              margin: 28px 0;
+            }
+            .otp-label {
+              display: block;
+              font-size: 11px;
+              font-weight: 800;
+              color: #0B6EF3;
+              text-transform: uppercase;
+              letter-spacing: 2px;
+              margin-bottom: 8px;
+            }
+            .otp-code {
+              font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+              font-size: 42px;
+              font-weight: 800;
+              letter-spacing: 10px;
+              color: #0B6EF3;
+              display: block;
+              margin: 4px 0;
+            }
+            .security-box {
+              background: #FFFBEB;
+              border-radius: 14px;
+              padding: 16px;
+              border: 1px solid #FDE68A;
+              margin-top: 24px;
+            }
+            .security-text {
+              font-size: 12px;
+              line-height: 1.6;
+              color: #92400E;
+              margin: 0;
+            }
+            .footer-info {
+              padding: 24px 32px;
+              text-align: center;
+              font-size: 11px;
+              color: #9CA3AF;
+              border-top: 1px solid #F0F2F5;
+              background: #FAFBFD;
+            }
           </style>
         </head>
         <body>
-          <div class="container">
-            <div class="header">
-              <h1>🔐 BetterMe Admin</h1>
-              <p>Two-Factor Authentication Code</p>
+          <div class="wrapper">
+            <!-- Header Banner -->
+            <div class="header-banner">
+              <div class="brand-pill">🔐 Admin Security (2FA)</div>
+              <h1 class="header-title">Koodhka Gelitaanka Admin-ka</h1>
+              <p class="header-sub">Two-Factor Authentication Sign-In Code</p>
             </div>
-            <div class="body">
-              <h2 style="font-size: 18px; margin-top: 0;">Admin Sign-In Verification</h2>
-              <p>Hello <strong>${userName || "Admin"}</strong>,</p>
-              <p>Someone (hopefully you!) is signing into your <strong>BetterMe Admin</strong> account. Enter this code to complete the sign-in:</p>
-              
-              <div class="code-box">
-                <span style="display:block; font-size: 12px; font-weight: 600; color: #667085; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 2px;">Your 2FA Code</span>
-                <span class="code">${code}</span>
+
+            <!-- Content Body -->
+            <div class="content-body">
+              <p class="greeting">
+                Kusoo dhowaw <strong>${userName || "Admin"}</strong>,<br>
+                Waxaa jira isku day lagu galayo akoonkaaga admin-ka <strong>BetterMe</strong>. Fadlan geli koodhkan 6-da god ah si aad u xaqiijiso:
+              </p>
+
+              <!-- OTP Code Display -->
+              <div class="otp-container">
+                <span class="otp-label">Koodhkaaga 2FA • Your 2FA Code</span>
+                <span class="otp-code">${code}</span>
               </div>
 
-              <p class="warning">
-                ⚠️ This code expires in <strong>10 minutes</strong>. If you did not attempt to sign in, please immediately change your password and contact support.<br/>
-                <em>This is a security-sensitive code — never share it with anyone.</em>
-              </p>
+              <!-- Security Notice -->
+              <div class="security-box">
+                <p class="security-text">
+                  ⚠️ <strong>Amniga:</strong> Koodhkani waxa uu dhacayaa <strong>10 daqiiqo</strong> gudahood.<br>
+                  Haddii aadan adigu ahayn qofka isku dayaya inuu galo akoonka, fadlan si degdeg ah u bedel furahaaga sirta ah.<br>
+                  <em>Never share this verification code with anyone.</em>
+                </p>
+              </div>
             </div>
-            <div class="footer">
-              BetterMe · Admin Security · Powered by Resend
+
+            <!-- Footer Info -->
+            <div class="footer-info">
+              BetterMe Admin Shield &bull; Powered by Resend &bull; Encrypted & Verified
             </div>
           </div>
         </body>
@@ -171,7 +404,7 @@ export async function sendTwoFactorCode({
     const { data, error } = await resend.emails.send({
       from: resendFrom,
       to: [toEmail],
-      subject: `BetterMe Admin - 2FA Code: ${code}`,
+      subject: `BetterMe Admin - Koodhka 2FA / Verification Code: ${code}`,
       html: htmlContent,
     });
 
@@ -185,14 +418,14 @@ export async function sendTwoFactorCode({
         body: JSON.stringify({
           from: resendFrom,
           to: [toEmail],
-          subject: `BetterMe Admin - 2FA Code: ${code}`,
+          subject: `BetterMe Admin - Koodhka 2FA / Verification Code: ${code}`,
           html: htmlContent,
         }),
       });
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.message || `Resend API failed with status ${res.status}`);
+        throw new Error(errJson.message || `Resend failed: ${res.status}`);
       }
 
       const resData = await res.json();

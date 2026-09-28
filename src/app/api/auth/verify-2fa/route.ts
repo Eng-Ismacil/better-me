@@ -4,52 +4,61 @@ import { createSession } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { token, otp } = await req.json();
+    const { token, otp, email } = await req.json();
 
-    if (!token || !otp) {
+    const cleanOtp = String(otp || "").replace(/\D/g, "").trim();
+
+    if (!cleanOtp) {
       return NextResponse.json(
-        { error: "Token and OTP code are required" },
+        { error: "Koodhka 6-da god ah waa qasab / 6-digit OTP code is required" },
         { status: 400 }
       );
     }
 
     const { db } = await connectToDatabase();
-    const record = await db.collection("twoFactorCodes").findOne({
-      token,
-      used: false,
-    });
+    
+    // Find matching 2FA record by token or recent unused OTP
+    let query: Record<string, unknown> = { used: false };
+    if (token) {
+      query.token = token;
+    } else if (email) {
+      query.email = String(email).trim().toLowerCase();
+    }
+
+    const record = await db.collection("twoFactorCodes").findOne(query, { sort: { createdAt: -1 } });
 
     if (!record) {
       return NextResponse.json(
-        { error: "Invalid or expired verification session" },
+        { error: "Kalfadhiga xaqiijintu wuu dhacay ama lama helin / Invalid or expired verification session" },
         { status: 401 }
       );
     }
 
-    // Check expiry
+    // Check expiry (10 minutes)
     if (new Date() > new Date(record.expiresAt)) {
-      await db.collection("twoFactorCodes").deleteOne({ token });
+      await db.collection("twoFactorCodes").deleteOne({ _id: record._id });
       return NextResponse.json(
-        { error: "Verification code has expired. Please sign in again." },
+        { error: "Koodhkani wuu dhacay, fadlan mar kale soo gal / Verification code has expired. Please sign in again." },
         { status: 401 }
       );
     }
 
     // Check OTP match
-    if (record.otp !== otp.trim()) {
+    const storedOtp = String(record.otp || "").replace(/\D/g, "").trim();
+    if (storedOtp !== cleanOtp) {
       return NextResponse.json(
-        { error: "Incorrect verification code. Please try again." },
+        { error: "Koodhka aad gelisay waa qalad / Incorrect verification code. Please check your email." },
         { status: 401 }
       );
     }
 
     // Mark as used
     await db.collection("twoFactorCodes").updateOne(
-      { token },
-      { $set: { used: true } }
+      { _id: record._id },
+      { $set: { used: true, usedAt: new Date().toISOString() } }
     );
 
-    // Create session for the admin user
+    // Create session for the verified user
     await createSession(record.userId);
 
     return NextResponse.json({ success: true, redirect: "/home" });

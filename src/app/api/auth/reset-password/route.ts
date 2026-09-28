@@ -4,50 +4,72 @@ import { hashPassword } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
-    const { email, code, newPassword } = await req.json();
+    const body = await req.json();
+    const { email, code, newPassword } = body;
 
-    if (!email || !code || !newPassword) {
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const cleanCode = String(code || "").replace(/\D/g, "").trim();
+    const cleanPassword = String(newPassword || "");
+
+    if (!normalizedEmail || !cleanCode || !cleanPassword) {
       return NextResponse.json(
-        { error: "Fadlan buuxi dhammaan xogta / Please fill all required fields" },
+        { error: "Fadlan buuxi dhammaan xogta / Please fill in all fields" },
         { status: 400 }
       );
     }
 
-    if (newPassword.length < 6) {
+    if (cleanPassword.length < 6) {
       return NextResponse.json(
         { error: "Furaha sirta waa inuu ka yaraan 6 xaraf / Password must be at least 6 characters" },
         { status: 400 }
       );
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
     await ensureIndexes();
     const { db } = await connectToDatabase();
 
-    const resetRecord = await db.collection("passwordResets").findOne({
-      email: normalizedEmail,
-      code: code.trim(),
-      used: false,
-    });
+    // Find the latest matching unused reset code for this email
+    const resetRecord = await db.collection("passwordResets").findOne(
+      {
+        email: normalizedEmail,
+        code: cleanCode,
+        used: false,
+      },
+      { sort: { createdAt: -1 } }
+    );
 
     if (!resetRecord) {
+      // Check if code was already used or expired
+      const anyRecord = await db.collection("passwordResets").findOne(
+        { email: normalizedEmail, code: cleanCode },
+        { sort: { createdAt: -1 } }
+      );
+
+      if (anyRecord && anyRecord.used) {
+        return NextResponse.json(
+          { error: "Koodhkan mar hore ayaa la isticmaalay, fadlan mid cusub dalbo / Code was already used. Please request a new one." },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json(
-        { error: "Koodhka xaqiijintu waa qalad / Invalid verification code" },
+        { error: "Koodhka xaqiijintu waa qalad / Invalid verification code. Please check your email." },
         { status: 400 }
       );
     }
 
+    // Check expiry
     const now = new Date();
     const expiresAt = new Date(resetRecord.expiresAt);
     if (now > expiresAt) {
       return NextResponse.json(
-        { error: "Koodhkan wuu dhacay, fadlan mar kale dalbo / Code has expired, please request a new one" },
+        { error: "Koodhkan wuu dhacay, fadlan mar kale dalbo / Code has expired. Please request a new code." },
         { status: 400 }
       );
     }
 
     // Hash the new password
-    const hashedPassword = await hashPassword(newPassword);
+    const hashedPassword = await hashPassword(cleanPassword);
 
     // Update user's password
     const updateResult = await db.collection("users").updateOne(

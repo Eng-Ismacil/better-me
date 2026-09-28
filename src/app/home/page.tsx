@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireAuth, seedDemoUserIfNeeded } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import {
   getUserHabits,
   getUserCompletionsForDate,
@@ -16,10 +16,6 @@ export default async function HomePage() {
   try {
     session = await requireAuth();
   } catch {
-    // Seed demo user and create a session redirect for demo
-    try {
-      await seedDemoUserIfNeeded();
-    } catch {}
     redirect("/welcome");
   }
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase, ensureIndexes } from "@/lib/db";
-import { verifyPassword, createSession, seedDemoUserIfNeeded } from "@/lib/auth";
+import { verifyPassword, createSession } from "@/lib/auth";
 import { sendTwoFactorCode } from "@/lib/resend";
 import { User } from "@/types";
 import { randomBytes } from "crypto";
@@ -8,14 +8,7 @@ import { randomBytes } from "crypto";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password, isDemo } = body;
-
-    // Fast-path demo login
-    if (isDemo) {
-      const demoUserId = await seedDemoUserIfNeeded();
-      await createSession(demoUserId);
-      return NextResponse.json({ success: true, redirect: "/home" });
-    }
+    const { email, password } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -33,12 +26,6 @@ export async function POST(req: NextRequest) {
       .findOne({ email: normalizedEmail });
 
     if (!user) {
-      // Check if user is trying to login with demo credentials before seed
-      if (normalizedEmail === "ismacil.dahir@example.com") {
-        const demoUserId = await seedDemoUserIfNeeded();
-        await createSession(demoUserId);
-        return NextResponse.json({ success: true, redirect: "/home" });
-      }
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }
@@ -53,7 +40,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if admin user requires 2FA
+    // Check if user requires 2FA
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userDoc = user as any;
     if (userDoc.isAdmin && userDoc.twoFactorEnabled) {
@@ -74,7 +61,7 @@ export async function POST(req: NextRequest) {
         createdAt: new Date().toISOString(),
       });
 
-      // Send via Resend
+      // Send via Resend Email
       await sendTwoFactorCode({
         toEmail: normalizedEmail,
         userName: user.name,
@@ -85,12 +72,10 @@ export async function POST(req: NextRequest) {
         success: true,
         requiresTwoFactor: true,
         twoFactorToken: token,
-        // In dev, include OTP for easy testing
-        devOtp: process.env.NODE_ENV !== "production" ? otp : undefined,
       });
     }
 
-    // Normal (non-admin) login
+    // Normal session login
     await createSession(user._id?.toString() || "");
     return NextResponse.json({ success: true, redirect: "/home" });
   } catch (err: unknown) {
