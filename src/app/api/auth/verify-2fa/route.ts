@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { createSession } from "@/lib/auth";
+import { codesMatch, normalizeCode } from "@/lib/admin";
+import { User } from "@/types";
+import { ObjectId } from "mongodb";
 
 export async function POST(req: NextRequest) {
   try {
     const { token, otp, email } = await req.json();
 
-    const cleanOtp = String(otp || "").replace(/\D/g, "").trim();
+    const cleanOtp = normalizeCode(otp);
 
     if (!cleanOtp) {
       return NextResponse.json(
@@ -16,16 +19,24 @@ export async function POST(req: NextRequest) {
     }
 
     const { db } = await connectToDatabase();
-    
-    // Find matching 2FA record by token or recent unused OTP
-    let query: Record<string, unknown> = { used: false };
+    const normalizedEmail = email ? String(email).trim().toLowerCase() : "";
+
+    // Prefer lookup by token; fallback to email + latest unused
+    let record = null;
+
     if (token) {
-      query.token = token;
-    } else if (email) {
-      query.email = String(email).trim().toLowerCase();
+      record = await db.collection("twoFactorCodes").findOne(
+        { token: String(token), used: false },
+        { sort: { createdAt: -1 } }
+      );
     }
 
-    const record = await db.collection("twoFactorCodes").findOne(query, { sort: { createdAt: -1 } });
+    if (!record && normalizedEmail) {
+      record = await db.collection("twoFactorCodes").findOne(
+        { email: normalizedEmail, used: false },
+        { sort: { createdAt: -1 } }
+      );
+    }
 
     if (!record) {
       return NextResponse.json(
@@ -34,7 +45,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check expiry (10 minutes)
     if (new Date() > new Date(record.expiresAt)) {
       await db.collection("twoFactorCodes").deleteOne({ _id: record._id });
       return NextResponse.json(
@@ -43,25 +53,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check OTP match
-    const storedOtp = String(record.otp || "").replace(/\D/g, "").trim();
-    if (storedOtp !== cleanOtp) {
+    if (!codesMatch(record.otp, cleanOtp)) {
       return NextResponse.json(
         { error: "Koodhka aad gelisay waa qalad / Incorrect verification code. Please check your email." },
         { status: 401 }
       );
     }
 
-    // Mark as used
     await db.collection("twoFactorCodes").updateOne(
       { _id: record._id },
       { $set: { used: true, usedAt: new Date().toISOString() } }
     );
 
-    // Create session for the verified user
-    await createSession(record.userId);
+    const userId = String(record.userId || "");
+    await createSession(userId);
 
-    return NextResponse.json({ success: true, redirect: "/home" });
+    let redirect = "/home";
+    if (userId && ObjectId.isValid(userId)) {
+      const user = await db.collection<User>("users").findOne({
+        _id: new ObjectId(userId) as unknown as string,
+      });
+      if (user?.isAdmin) {
+        redirect = "/admin";
+      }
+    }
+
+    return NextResponse.json({ success: true, redirect });
   } catch (err: unknown) {
     const error = err as Error;
     return NextResponse.json({ error: error.message }, { status: 500 });

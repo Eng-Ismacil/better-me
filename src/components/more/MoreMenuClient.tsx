@@ -129,6 +129,15 @@ export default function MoreMenuClient({
       bg: "#EFF6FF",
       badge: null,
     },
+    {
+      label: language === "so" ? "Maaliyaddayda (Finance)" : "Personal Finance Tracker",
+      desc: language === "so" ? "La soco dakhligaaga, kharashkaaga iyo haraagaaga maalinlaha ah" : "Track daily income, expenses & balance with calm clarity",
+      href: "/finance",
+      icon: "account_balance_wallet",
+      color: "#059669",
+      bg: "#ECFDF5",
+      badge: null,
+    },
   ];
 
   const accountAndSecurity = [
@@ -148,6 +157,20 @@ export default function MoreMenuClient({
       color: "#6B7280",
       bg: "#F3F4F6",
     },
+    ...(user.role === "admin"
+      ? [
+          {
+            label: language === "so" ? "Maamulka Admin-ka" : "Admin Control Panel",
+            desc: language === "so"
+              ? "Maamul isticmaalayaasha, caadooyinka, faafinta, audit & maaliyadda"
+              : "Manage users, habits, broadcasts, audit logs & platform finance",
+            href: "/admin",
+            icon: "admin_panel_settings",
+            color: "#0B6EF3",
+            bg: "#EFF6FF",
+          },
+        ]
+      : []),
   ];
 
   const faqs = [

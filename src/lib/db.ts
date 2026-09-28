@@ -45,6 +45,9 @@ export async function ensureIndexes(): Promise<void> {
 
     await Promise.all([
       db.collection("users").createIndex({ email: 1 }, { unique: true }),
+      db.collection("users").createIndex({ deletedAt: 1 }),
+      db.collection("users").createIndex({ status: 1 }),
+      db.collection("users").createIndex({ isAdmin: 1 }),
       db.collection("habits").createIndex({ userId: 1, status: 1 }),
       db.collection("habits").createIndex({ userId: 1, createdAt: -1 }),
       db.collection("habitCompletions").createIndex(
@@ -62,6 +65,9 @@ export async function ensureIndexes(): Promise<void> {
         { userId: 1, achievementCode: 1 },
         { unique: true }
       ),
+      db.collection("auditLogs").createIndex({ createdAt: -1 }),
+      db.collection("financeTransactions").createIndex({ userId: 1, date: -1 }),
+      db.collection("twoFactorCodes").createIndex({ email: 1, token: 1 }),
     ]);
 
     indexesInitialized = true;

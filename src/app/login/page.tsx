@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/auth/AuthLayout";
@@ -23,7 +23,17 @@ export default function LoginPage() {
   const [twoFactorToken, setTwoFactorToken] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((c) => Math.max(0, c - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +112,11 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/verify-2fa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: twoFactorToken, otp: fullOtp }),
+        body: JSON.stringify({
+          token: twoFactorToken,
+          otp: fullOtp,
+          email: email.trim().toLowerCase(),
+        }),
       });
 
       const data = await res.json();
@@ -117,6 +131,38 @@ export default function LoginPage() {
       setError(e.message || "Failed to verify 2FA code");
     } finally {
       setVerifying(false);
+    }
+  };
+
+  const handleResend2FA = async () => {
+    if (resendCooldown > 0 || resending) return;
+    setError("");
+    setResending(true);
+    try {
+      const res = await fetch("/api/auth/resend-2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          token: twoFactorToken,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to resend code");
+      if (data.twoFactorToken) setTwoFactorToken(data.twoFactorToken);
+      setOtp(["", "", "", "", "", ""]);
+      setResendCooldown(60);
+      otpRefs.current[0]?.focus();
+    } catch (err: unknown) {
+      const e = err as Error;
+      setError(
+        e.message ||
+          (language === "so"
+            ? "Koodhka dib loo dirin kari waayay"
+            : "Could not resend verification code")
+      );
+    } finally {
+      setResending(false);
     }
   };
 
@@ -192,7 +238,30 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() => setNeeds2FA(false)}
+              onClick={handleResend2FA}
+              disabled={resending || resendCooldown > 0}
+              className="inline-flex items-center justify-center gap-2 text-[13px] text-[#0B6EF3] hover:underline font-semibold disabled:text-[#9CA3AF] disabled:no-underline transition-colors"
+            >
+              <Icon name="mark_email_read" size={16} />
+              {resending
+                ? language === "so"
+                  ? "Waa la dirayaa..."
+                  : "Sending..."
+                : resendCooldown > 0
+                ? language === "so"
+                  ? `Mar kale dir (${resendCooldown}s)`
+                  : `Resend code (${resendCooldown}s)`
+                : language === "so"
+                ? "Mar kale dir koodhka email-ka"
+                : "Resend code to email"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setNeeds2FA(false);
+                setResendCooldown(0);
+              }}
               className="text-[13px] text-[#667085] hover:text-[#111827] text-center font-semibold transition-colors"
             >
               {language === "so" ? "← Ku noqo gelitaanka" : "← Back to Login"}

@@ -39,6 +39,11 @@ export default function DesktopSidebar({
     { label: t("nav_achievements"), href: "/achievements", icon: "military_tech" },
     { label: t("nav_reminders"), href: "/reminders", icon: "alarm" },
     {
+      label: language === "so" ? "Maaliyadda" : "Finance",
+      href: "/finance",
+      icon: "account_balance_wallet",
+    },
+    {
       label: t("nav_notifications"),
       href: "/notifications",
       icon: "notifications",

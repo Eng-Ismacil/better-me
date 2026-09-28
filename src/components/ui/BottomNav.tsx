@@ -31,6 +31,7 @@ export default function BottomNav() {
           "/profile",
           "/settings",
           "/notifications",
+          "/finance",
         ].some((prefix) => path.startsWith(prefix)),
     },
   ];
