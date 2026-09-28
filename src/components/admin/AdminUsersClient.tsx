@@ -259,12 +259,12 @@ export default function AdminUsersClient() {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[22px] font-extrabold text-[#111827] font-[family-name:var(--font-headline)]">
-            {so ? "Isticmaalayaasha" : "Users"}
+            {so ? "Maamulka Profile-yada" : "Profile Management"}
           </h1>
           <p className="text-[13px] text-[#667085] mt-1">
             {so
-              ? "Raadi, tafatir, disable ama soft-delete samee."
-              : "Search, edit, disable, or soft-delete users."}
+              ? "Maamul xogta profile-ka, xaaladda account-ka iyo gelitaanka."
+              : "Manage profile details, account status, and access settings."}
           </p>
         </div>
         <button

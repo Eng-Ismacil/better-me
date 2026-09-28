@@ -13,12 +13,14 @@ interface DesktopSidebarProps {
   userName?: string;
   userEmail?: string;
   avatarUrl?: string;
+  isAdmin?: boolean;
 }
 
 export default function DesktopSidebar({
   userName = "Ismacil Dahir",
   userEmail = "ismacil.dahir@example.com",
   avatarUrl = "/images/avatar.jpg",
+  isAdmin = false,
 }: DesktopSidebarProps) {
   const pathname = usePathname();
   const { language, setLanguage, t } = useTranslation();
@@ -50,6 +52,14 @@ export default function DesktopSidebar({
       badge: unreadNotifs > 0 ? unreadNotifs : undefined,
     },
   ];
+
+  if (isAdmin) {
+    primaryNav.push({
+      label: language === "so" ? "Admin Panel" : "Admin Panel",
+      href: "/admin",
+      icon: "admin_panel_settings",
+    });
+  }
 
   const secondaryNav = [
     { label: t("nav_profile"), href: "/profile", icon: "account_circle" },
@@ -90,7 +100,6 @@ export default function DesktopSidebar({
             <Link
               key={item.href}
               href={item.href}
-              prefetch={true}
               className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-[14px] transition-all ${
                 isActive
                   ? "bg-[#EFF6FF] text-[#007AFF] font-semibold"
@@ -123,7 +132,6 @@ export default function DesktopSidebar({
             <Link
               key={item.href}
               href={item.href}
-              prefetch={true}
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-[14px] transition-all ${
                 isActive
                   ? "bg-[#EFF6FF] text-[#007AFF] font-semibold"

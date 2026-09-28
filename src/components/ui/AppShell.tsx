@@ -9,6 +9,7 @@ import Link from "next/link";
 import ProfileDropdown from "./ProfileDropdown";
 import { useTranslation } from "@/lib/i18n";
 import { subscribeToNotifications } from "@/lib/notificationStore";
+import { getAdminStatus } from "@/lib/adminStatus";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -29,10 +30,21 @@ export default function AppShell({
 }: AppShellProps) {
   const { language, setLanguage, t } = useTranslation();
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // Single shared poll — no per-component duplicate fetches
     return subscribeToNotifications(setUnreadCount);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void getAdminStatus().then((value) => {
+      if (active) setIsAdmin(value);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
@@ -42,6 +54,7 @@ export default function AppShell({
         userName={userName}
         userEmail={userEmail}
         avatarUrl={avatarUrl}
+        isAdmin={isAdmin}
       />
 
       {/* Main Content Area */}
@@ -54,6 +67,7 @@ export default function AppShell({
               avatarUrl={avatarUrl}
               userName={userName}
               userEmail={userEmail}
+              isAdmin={isAdmin}
             />
           </div>
         )}
@@ -117,13 +131,14 @@ export default function AppShell({
               userName={userName}
               userEmail={userEmail}
               avatarUrl={avatarUrl}
+              isAdmin={isAdmin}
               align="right"
             />
           </div>
         </header>
 
         {/* Main Content Viewport */}
-        <main className="flex-1 w-full max-w-lg md:max-w-4xl mx-auto pt-20 md:pt-6 pb-24 md:pb-12 px-4 md:px-8">
+        <main className="flex-1 w-full max-w-lg md:max-w-4xl mx-auto pt-16 md:pt-6 pb-24 md:pb-12 px-4 md:px-8">
           {children}
         </main>
 

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Icon from "@/components/ui/Icon";
+import SavingsGoalsPanel from "@/components/finance/SavingsGoalsPanel";
 import { useTranslation } from "@/lib/i18n";
 
 interface Transaction {
@@ -28,6 +29,7 @@ const emptyForm = {
 export default function FinanceClient() {
   const { language } = useTranslation();
   const so = language === "so";
+  const [view, setView] = useState<"transactions" | "savings">("transactions");
 
   const [rows, setRows] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState({ income: 0, expense: 0, balance: 0 });
@@ -55,7 +57,8 @@ export default function FinanceClient() {
   }, []);
 
   useEffect(() => {
-    load();
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
   const openCreate = () => {
@@ -128,22 +131,50 @@ export default function FinanceClient() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-extrabold text-[#111827] font-[family-name:var(--font-headline)]">
-            {so ? "Maaliyaddayda" : "My Finance"}
+            {view === "savings"
+              ? so ? "Kaydkayga" : "My Savings"
+              : so ? "Maaliyaddayda" : "My Finance"}
           </h1>
           <p className="text-[13px] text-[#667085] mt-1">
-            {so
-              ? "La soco dakhligaaga iyo kharashkaaga maalinlaha ah."
-              : "Track your daily income and expenses."}
+            {view === "savings"
+              ? so
+                ? "Deji yoolal oo la soco horumarka kaydkaaga."
+                : "Set goals and track your savings progress."
+              : so
+                ? "La soco dakhligaaga iyo kharashkaaga maalinlaha ah."
+                : "Track your daily income and expenses."}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0B6EF3] text-white text-[13px] font-bold cursor-pointer"
-        >
-          <Icon name="add" size={16} />
-          {so ? "Ku dar" : "Add"}
-        </button>
+        {view === "transactions" && (
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-[#0B6EF3] px-4 text-[12px] font-bold text-white"
+          >
+            <Icon name="add" size={16} />
+            {so ? "Ku dar" : "Add transaction"}
+          </button>
+        )}
+      </div>
+
+      <div className="flex w-full gap-1 rounded-xl border border-[#E7ECF3] bg-white p-1 sm:w-fit">
+        {([
+          ["transactions", so ? "Dhaqdhaqaaqyo" : "Transactions", "receipt_long"],
+          ["savings", so ? "Kayd" : "Savings", "savings"],
+        ] as const).map(([value, label, icon]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setView(value)}
+            aria-pressed={view === value}
+            className={`flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-[12px] font-bold sm:flex-none ${
+              view === value ? "bg-[#0B6EF3] text-white" : "text-[#667085] hover:bg-[#F4F8FF]"
+            }`}
+          >
+            <Icon name={icon} size={17} />
+            {label}
+          </button>
+        ))}
       </div>
 
       {error && (
@@ -153,7 +184,11 @@ export default function FinanceClient() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-3">
+      {view === "savings" ? (
+        <SavingsGoalsPanel />
+      ) : (
+        <>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="bg-white rounded-2xl border border-[#E7ECF3] p-4 shadow-[0_2px_12px_rgba(16,24,40,0.04)]">
           <div className="flex items-center gap-2 text-[#20C773] mb-1">
             <Icon name="trending_up" size={18} />
@@ -233,6 +268,8 @@ export default function FinanceClient() {
           ))
         )}
       </div>
+        </>
+      )}
 
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">

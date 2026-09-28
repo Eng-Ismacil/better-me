@@ -49,7 +49,6 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              prefetch={true}
               className={`flex flex-col items-center justify-center h-full gap-0.5 transition-all select-none ${
                 isActive
                   ? "text-[#0B6EF3] font-bold"

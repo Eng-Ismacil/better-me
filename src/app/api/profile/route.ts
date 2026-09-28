@@ -27,6 +27,7 @@ export async function GET() {
         avatarUrl: user.avatarUrl || "/images/avatar.jpg",
         memberSince: user.memberSince || "6 Months",
         timezone: user.timezone || "UTC",
+        isAdmin: Boolean(user.isAdmin),
       },
     });
   } catch (err: unknown) {

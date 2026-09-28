@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
     await ensureIndexes();
     const { db } = await connectToDatabase();
     const { searchParams } = new URL(req.url);
+    const adminLedger = searchParams.get("scope") === "admin";
     const userId = searchParams.get("userId") || "";
     const type = searchParams.get("type") || "";
     const page = Math.max(1, Number(searchParams.get("page") || 1));
@@ -25,22 +26,23 @@ export async function GET(req: NextRequest) {
     const filter: Record<string, unknown> = {
       deletedAt: { $in: [null, undefined] },
     };
-    if (userId) filter.userId = userId;
+    if (!adminLedger && userId) filter.userId = userId;
     if (type === "income" || type === "expense") filter.type = type;
+    const collectionName = adminLedger ? "adminFinanceEntries" : "financeTransactions";
 
     const skip = (page - 1) * limit;
     const [transactions, total] = await Promise.all([
       db
-        .collection("financeTransactions")
+        .collection(collectionName)
         .find(filter)
         .sort({ date: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .toArray(),
-      db.collection("financeTransactions").countDocuments(filter),
+      db.collection(collectionName).countDocuments(filter),
     ]);
 
-    const userIds = [
+    const userIds = adminLedger ? [] : [
       ...new Set(
         transactions.map((t) => String(t.userId)).filter((id) => ObjectId.isValid(id))
       ),
@@ -55,9 +57,9 @@ export async function GET(req: NextRequest) {
     const userMap = new Map(users.map((u) => [String(u._id), u]));
 
     const summary = await db
-      .collection("financeTransactions")
+      .collection(collectionName)
       .aggregate([
-        { $match: { deletedAt: { $in: [null, undefined] } } },
+        { $match: filter },
         {
           $group: {
             _id: "$type",
@@ -78,7 +80,7 @@ export async function GET(req: NextRequest) {
         return {
           ...t,
           _id: String(t._id),
-          userName: u?.name || "Unknown",
+          userName: adminLedger ? "BetterMe Operations" : u?.name || "Unknown",
           userEmail: u?.email || "",
         };
       }),
@@ -95,6 +97,7 @@ export async function POST(req: NextRequest) {
     const admin = await requireAdmin();
     await ensureIndexes();
     const { db } = await connectToDatabase();
+    const adminLedger = new URL(req.url).searchParams.get("scope") === "admin";
     const body = await req.json();
 
     const userId = String(body.userId || "");
@@ -106,16 +109,21 @@ export async function POST(req: NextRequest) {
     const date = String(body.date || new Date().toISOString().slice(0, 10));
     const notes = String(body.notes || "");
 
-    if (!ObjectId.isValid(userId) || !title || !(amount > 0)) {
+    if ((!adminLedger && !ObjectId.isValid(userId)) || !title || !(amount > 0)) {
       return NextResponse.json(
-        { error: "userId, title, and positive amount are required" },
+        { error: "A valid user, title, and positive amount are required" },
         { status: 400 }
       );
     }
 
+    if (!adminLedger) {
+      const userExists = await db.collection("users").findOne({ _id: new ObjectId(userId) });
+      if (!userExists) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const now = new Date().toISOString();
     const doc = {
-      userId,
+      ...(adminLedger ? { actorId: admin.id, actorEmail: admin.email } : { userId }),
       type,
       amount,
       currency,
@@ -128,14 +136,16 @@ export async function POST(req: NextRequest) {
       deletedAt: null,
     };
 
-    const result = await db.collection("financeTransactions").insertOne(doc);
+    const result = await db
+      .collection(adminLedger ? "adminFinanceEntries" : "financeTransactions")
+      .insertOne(doc);
     await writeAuditLog(db, {
       actorId: admin.id,
       actorEmail: admin.email,
-      action: "finance.create",
-      entityType: "finance",
+      action: adminLedger ? "finance.admin_ledger_create" : "finance.create",
+      entityType: adminLedger ? "admin_finance" : "finance",
       entityId: result.insertedId.toString(),
-      details: { userId, type, amount, title },
+      details: { userId: adminLedger ? undefined : userId, type, amount, title },
     });
 
     return NextResponse.json({

@@ -16,6 +16,7 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function PATCH(req: NextRequest, ctx: Ctx) {
   try {
     const admin = await requireAdmin();
+    const adminLedger = new URL(req.url).searchParams.get("scope") === "admin";
     const { id } = await ctx.params;
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
@@ -25,12 +26,26 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     const body = await req.json();
     const $set: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
-    for (const key of ["type", "amount", "currency", "category", "title", "notes", "date", "userId"]) {
+    for (const key of ["type", "amount", "currency", "category", "title", "notes", "date"]) {
       if (body[key] !== undefined) $set[key] = body[key];
     }
-    if ($set.amount !== undefined) $set.amount = Number($set.amount);
+    if (body.userId !== undefined && !adminLedger) {
+      if (!ObjectId.isValid(String(body.userId))) {
+        return NextResponse.json({ error: "Invalid user" }, { status: 400 });
+      }
+      $set.userId = String(body.userId);
+    }
+    if ($set.amount !== undefined) {
+      $set.amount = Number($set.amount);
+      if (!Number.isFinite($set.amount) || Number($set.amount) <= 0) {
+        return NextResponse.json({ error: "Amount must be positive" }, { status: 400 });
+      }
+    }
+    if ($set.type !== undefined && !["income", "expense"].includes(String($set.type))) {
+      return NextResponse.json({ error: "Invalid transaction type" }, { status: 400 });
+    }
 
-    const result = await db.collection("financeTransactions").findOneAndUpdate(
+    const result = await db.collection(adminLedger ? "adminFinanceEntries" : "financeTransactions").findOneAndUpdate(
       { _id: new ObjectId(id) },
       { $set },
       { returnDocument: "after" }
@@ -43,8 +58,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     await writeAuditLog(db, {
       actorId: admin.id,
       actorEmail: admin.email,
-      action: "finance.update",
-      entityType: "finance",
+      action: adminLedger ? "finance.admin_ledger_update" : "finance.update",
+      entityType: adminLedger ? "admin_finance" : "finance",
       entityId: id,
     });
 
@@ -57,9 +72,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   }
 }
 
-export async function DELETE(_req: NextRequest, ctx: Ctx) {
+export async function DELETE(req: NextRequest, ctx: Ctx) {
   try {
     const admin = await requireAdmin();
+    const adminLedger = new URL(req.url).searchParams.get("scope") === "admin";
     const { id } = await ctx.params;
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
@@ -67,7 +83,7 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
 
     const { db } = await connectToDatabase();
     const now = new Date().toISOString();
-    const result = await db.collection("financeTransactions").findOneAndUpdate(
+    const result = await db.collection(adminLedger ? "adminFinanceEntries" : "financeTransactions").findOneAndUpdate(
       { _id: new ObjectId(id) },
       { $set: { deletedAt: now, updatedAt: now } },
       { returnDocument: "after" }
@@ -80,8 +96,8 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
     await writeAuditLog(db, {
       actorId: admin.id,
       actorEmail: admin.email,
-      action: "finance.delete",
-      entityType: "finance",
+      action: adminLedger ? "finance.admin_ledger_delete" : "finance.delete",
+      entityType: adminLedger ? "admin_finance" : "finance",
       entityId: id,
     });
 

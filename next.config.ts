@@ -1,10 +1,8 @@
 import type { NextConfig } from "next";
-import path from "path";
 
 const nextConfig: NextConfig = {
-  // ─── Client-router caching (like React Router DOM) ───────────────────────
-  // Pages stay cached in memory for 5 minutes; re-validates layout every 1 min.
-  // This eliminates the "every tab = fresh network render" problem.
+  // ─── Client-router segment cache ─────────────────────────────────────────
+  // Keep dynamic route segments briefly and static/full-prefetched segments longer.
   experimental: {
     staleTimes: {
       dynamic: 60,   // dynamic pages cached client-side 60s (was 0 = never)
