@@ -14,16 +14,23 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["health", "lifestyle", "productivity"],
     icons: [
       {
-        src: "/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
         purpose: "any",
       },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
     ],
     shortcuts: [
-      { name: "Home", url: "/home", icons: [{ src: "/icon.svg", sizes: "any" }] },
-      { name: "Habits", url: "/habits", icons: [{ src: "/icon.svg", sizes: "any" }] },
-      { name: "Finance", url: "/finance", icons: [{ src: "/icon.svg", sizes: "any" }] },
+      { name: "Home", url: "/home", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+      { name: "Habits", url: "/habits", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+      { name: "Finance", url: "/finance", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
     ],
   };
 }
