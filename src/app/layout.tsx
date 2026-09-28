@@ -35,6 +35,8 @@ export const viewport: Viewport = {
   themeColor: "#FCF9F8",
 };
 
+import AppProviders from "@/components/providers/AppProviders";
+
 export default function RootLayout({
   children,
 }: {
@@ -43,6 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${inter.variable} h-full antialiased`}
     >
       <head>
@@ -53,8 +56,11 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col bg-[#FCF9F8] text-[#101010] antialiased selection:bg-[#EFF6FF]">
-        {children}
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col bg-[#FCF9F8] text-[#101010] antialiased selection:bg-[#EFF6FF]"
+      >
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

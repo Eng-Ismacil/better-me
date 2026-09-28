@@ -163,7 +163,7 @@ export default function CalendarClient({ calendarData, totalHabits, habits }: Ca
       {selectedDate && (
         <section className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-[16px] font-bold text-[#101010]">
+            <h3 suppressHydrationWarning className="text-[16px] font-bold text-[#101010]">
               {new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", {
                 weekday: "long", month: "long", day: "numeric"
               })}

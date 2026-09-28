@@ -9,15 +9,98 @@ const CATEGORIES = [
   { id: "health", label: "Health", icon: "favorite", color: "#22C55E", bg: "#ECFDF3" },
   { id: "fitness", label: "Fitness", icon: "fitness_center", color: "#007AFF", bg: "#EFF6FF" },
   { id: "learning", label: "Learning", icon: "menu_book", color: "#F59E0B", bg: "#FFF7ED" },
-  { id: "mindfulness", label: "Mindfulness", icon: "self_improvement", color: "#6B7280", bg: "#F3F4F6" },
+  { id: "mindfulness", label: "Mindfulness", icon: "self_improvement", color: "#8B5CF6", bg: "#F5F3FF" },
   { id: "productivity", label: "Productivity", icon: "edit_note", color: "#A855F7", bg: "#FDF4FF" },
 ];
 
-const ICONS = [
-  "water_drop", "fitness_center", "self_improvement", "menu_book", "bedtime",
-  "edit_note", "directions_run", "restaurant", "spa", "favorite",
-  "wb_sunny", "nightlight_round", "coffee", "meditation", "psychology",
-];
+// Categorized icons per category
+const ICONS_BY_CATEGORY: Record<string, { icon: string; label: string }[]> = {
+  health: [
+    { icon: "water_drop", label: "Water" },
+    { icon: "favorite", label: "Heart" },
+    { icon: "bedtime", label: "Sleep" },
+    { icon: "restaurant", label: "Food" },
+    { icon: "local_dining", label: "Meal" },
+    { icon: "nutrition", label: "Nutrition" },
+    { icon: "vaccines", label: "Medicine" },
+    { icon: "monitor_heart", label: "Heartbeat" },
+    { icon: "health_and_safety", label: "Safety" },
+    { icon: "air", label: "Breathing" },
+    { icon: "no_food", label: "Fast" },
+    { icon: "emoji_food_beverage", label: "Tea" },
+    { icon: "local_cafe", label: "Coffee" },
+    { icon: "spa", label: "Spa" },
+    { icon: "mood", label: "Mood" },
+  ],
+  fitness: [
+    { icon: "fitness_center", label: "Gym" },
+    { icon: "directions_run", label: "Run" },
+    { icon: "directions_walk", label: "Walk" },
+    { icon: "directions_bike", label: "Cycling" },
+    { icon: "sports_basketball", label: "Basketball" },
+    { icon: "sports_soccer", label: "Football" },
+    { icon: "sports_tennis", label: "Tennis" },
+    { icon: "pool", label: "Swimming" },
+    { icon: "sports_gymnastics", label: "Gymnastics" },
+    { icon: "accessibility_new", label: "Stretch" },
+    { icon: "downhill_skiing", label: "Skiing" },
+    { icon: "hiking", label: "Hiking" },
+    { icon: "kayaking", label: "Kayaking" },
+    { icon: "sports_martial_arts", label: "Martial Arts" },
+    { icon: "timer", label: "Interval" },
+  ],
+  learning: [
+    { icon: "menu_book", label: "Reading" },
+    { icon: "school", label: "Study" },
+    { icon: "edit_note", label: "Notes" },
+    { icon: "psychology", label: "Think" },
+    { icon: "calculate", label: "Math" },
+    { icon: "science", label: "Science" },
+    { icon: "language", label: "Language" },
+    { icon: "code", label: "Coding" },
+    { icon: "palette", label: "Art" },
+    { icon: "music_note", label: "Music" },
+    { icon: "mic", label: "Speaking" },
+    { icon: "history_edu", label: "History" },
+    { icon: "biotech", label: "Research" },
+    { icon: "lightbulb", label: "Idea" },
+    { icon: "quiz", label: "Quiz" },
+  ],
+  mindfulness: [
+    { icon: "self_improvement", label: "Meditation" },
+    { icon: "spa", label: "Relaxation" },
+    { icon: "mood", label: "Gratitude" },
+    { icon: "air", label: "Breathe" },
+    { icon: "nightlight_round", label: "Night" },
+    { icon: "wb_sunny", label: "Morning" },
+    { icon: "nature", label: "Nature" },
+    { icon: "forest", label: "Forest" },
+    { icon: "water", label: "Peace" },
+    { icon: "waves", label: "Flow" },
+    { icon: "flare", label: "Energy" },
+    { icon: "local_florist", label: "Garden" },
+    { icon: "church", label: "Prayer" },
+    { icon: "volunteer_activism", label: "Kindness" },
+    { icon: "diversity_3", label: "Social" },
+  ],
+  productivity: [
+    { icon: "edit_note", label: "Journal" },
+    { icon: "task_alt", label: "Tasks" },
+    { icon: "calendar_today", label: "Planning" },
+    { icon: "alarm", label: "Alarm" },
+    { icon: "schedule", label: "Schedule" },
+    { icon: "workspace_premium", label: "Goals" },
+    { icon: "trending_up", label: "Growth" },
+    { icon: "savings", label: "Finance" },
+    { icon: "mail", label: "Inbox" },
+    { icon: "inbox", label: "Organize" },
+    { icon: "laptop_chromebook", label: "Work" },
+    { icon: "star", label: "Priority" },
+    { icon: "flag", label: "Milestone" },
+    { icon: "bolt", label: "Focus" },
+    { icon: "checklist", label: "Checklist" },
+  ],
+};
 
 const TIMES = ["Morning", "Afternoon", "Evening", "Anytime"];
 const DIFFICULTIES = ["easy", "medium", "hard"] as const;
@@ -28,7 +111,7 @@ export default function NewHabitForm() {
     name: "",
     description: "",
     category: "health",
-    icon: "check_circle",
+    icon: "favorite",
     frequency: "daily",
     difficulty: "easy" as "easy" | "medium" | "hard",
     preferredTime: "Morning",
@@ -38,7 +121,7 @@ export default function NewHabitForm() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [step, setStep] = useState(1); // Multi-step: 1 = basic, 2 = customize, 3 = schedule
+  const [step, setStep] = useState(1);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +152,13 @@ export default function NewHabitForm() {
   };
 
   const selectedCategory = CATEGORIES.find((c) => c.id === form.category);
+  const categoryIcons = ICONS_BY_CATEGORY[form.category] || [];
+
+  // When category changes, auto-set icon to first icon of that category
+  const handleCategoryChange = (catId: string) => {
+    const firstIcon = (ICONS_BY_CATEGORY[catId] || [])[0]?.icon || "check_circle";
+    setForm({ ...form, category: catId, icon: firstIcon });
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-10 select-none">
@@ -141,7 +231,7 @@ export default function NewHabitForm() {
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => setForm({ ...form, category: cat.id })}
+                  onClick={() => handleCategoryChange(cat.id)}
                   className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
                     form.category === cat.id
                       ? "border-[#007AFF] bg-[#EFF6FF]"
@@ -169,13 +259,13 @@ export default function NewHabitForm() {
             }}
             className="w-full h-14 bg-[#007AFF] text-white rounded-full font-semibold text-[15px] flex items-center justify-center gap-2 hover:bg-[#0070eb] active:scale-[0.98] transition-all"
           >
-            <span>Next: Customize</span>
+            <span>Next: Choose Icon</span>
             <Icon name="arrow_forward" size={18} />
           </button>
         </div>
       )}
 
-      {/* Step 2: Icon & Difficulty */}
+      {/* Step 2: Icon & Difficulty — Categorized Icons */}
       {step === 2 && (
         <div className="flex flex-col gap-4">
           {/* Icon Preview */}
@@ -186,29 +276,44 @@ export default function NewHabitForm() {
             >
               <Icon name={form.icon || "check_circle"} size={36} style={{ color: selectedCategory?.color || "#007AFF" }} />
             </div>
-            <p className="text-[13px] text-[#667085]">Selected icon</p>
+            <p className="text-[13px] text-[#667085]">
+              Selected: <span className="font-semibold text-[#101010]">{categoryIcons.find(i => i.icon === form.icon)?.label || form.icon}</span>
+            </p>
           </div>
 
+          {/* Categorized icon grid */}
           <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex flex-col gap-3">
-            <label className="text-[13px] font-semibold text-[#101010]">Choose Icon</label>
+            <div className="flex items-center justify-between">
+              <label className="text-[13px] font-semibold text-[#101010]">
+                Choose Icon
+              </label>
+              <span className="text-[11px] text-[#667085] px-2.5 py-0.5 rounded-full capitalize"
+                style={{ background: selectedCategory?.bg, color: selectedCategory?.color }}
+              >
+                {selectedCategory?.label}
+              </span>
+            </div>
             <div className="grid grid-cols-5 gap-2">
-              {ICONS.map((ic) => (
+              {categoryIcons.map(({ icon: ic, label }) => (
                 <button
                   key={ic}
                   type="button"
+                  title={label}
                   onClick={() => setForm({ ...form, icon: ic })}
-                  className={`w-full aspect-square rounded-xl flex items-center justify-center border-2 transition-all ${
+                  className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl border-2 transition-all ${
                     form.icon === ic
                       ? "border-[#007AFF] bg-[#EFF6FF]"
                       : "border-[#E5E7EB] bg-[#f6f3f2] hover:border-[#007AFF]/40"
                   }`}
                 >
                   <Icon name={ic} size={22} className={form.icon === ic ? "text-[#007AFF]" : "text-[#667085]"} />
+                  <span className="text-[9px] text-[#667085] truncate w-full text-center leading-tight">{label}</span>
                 </button>
               ))}
             </div>
           </div>
 
+          {/* Difficulty */}
           <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex flex-col gap-3">
             <label className="text-[13px] font-semibold text-[#101010]">Difficulty</label>
             <div className="grid grid-cols-3 gap-2">

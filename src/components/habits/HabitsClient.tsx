@@ -144,11 +144,14 @@ export default function HabitsClient({ habits, completedIds: initialCompletedIds
                 isCompleted={completedIds.has(habit._id || "")}
                 onToggle={handleToggle}
               />
-              {/* Category badge */}
-              <div className={`absolute top-3 right-14 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${CATEGORY_COLORS[habit.category]?.bg || "bg-[#f6f3f2]"} ${CATEGORY_COLORS[habit.category]?.text || "text-[#667085]"}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${CATEGORY_COLORS[habit.category]?.dot || "bg-[#667085]"}`} />
-                {habit.category}
-              </div>
+              {/* Quick Edit button */}
+              <Link
+                href={`/habits/${habit._id}`}
+                className="absolute top-4 right-14 w-7 h-7 rounded-full bg-[#F4F8FF] border border-[#E7ECF3] flex items-center justify-center text-[#0B6EF3] opacity-0 group-hover:opacity-100 hover:bg-[#0B6EF3] hover:text-white transition-all shadow-2xs z-10"
+                title="Edit / Wax ka bedel"
+              >
+                <Icon name="edit" size={14} />
+              </Link>
             </div>
           ))}
         </div>

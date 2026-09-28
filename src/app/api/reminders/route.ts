@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     const { habitId, habitTitle, time, days, smartTiming } = body;
 
     const { db } = await connectToDatabase();
-    const newReminder: Reminder = {
+    const newReminder: Omit<Reminder, "_id"> = {
       userId: session.id,
       habitId: habitId || "",
       habitTitle: habitTitle || "Daily Habit",

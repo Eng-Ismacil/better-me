@@ -128,3 +128,25 @@ export interface WeeklyConsistencyDay {
   completedCount: number;
   totalHabits: number;
 }
+
+export interface AppNotification {
+  _id?: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: "streak" | "habit" | "achievement" | "reminder" | "system";
+  link?: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface PasswordReset {
+  _id?: string;
+  email: string;
+  code: string;
+  token: string;
+  expiresAt: string;
+  used: boolean;
+  createdAt: string;
+}
+

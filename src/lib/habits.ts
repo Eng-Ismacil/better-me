@@ -62,7 +62,7 @@ export async function toggleHabitCompletion(
     // Uncomplete
     await db
       .collection("habitCompletions")
-      .deleteOne({ _id: existing._id });
+      .deleteOne({ _id: existing._id as unknown as ObjectId });
 
     const newStreak = Math.max(0, (habit.currentStreak || 1) - 1);
     const newTotal = Math.max(0, (habit.totalCompletions || 1) - 1);
