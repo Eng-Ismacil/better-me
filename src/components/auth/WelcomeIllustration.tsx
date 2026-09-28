@@ -1,113 +1,100 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import Icon from "@/components/ui/Icon";
 
 export default function WelcomeIllustration() {
   return (
-    <div className="relative w-full max-w-[340px] h-[220px] sm:h-[240px] mx-auto my-3 flex items-center justify-center select-none">
-      {/* Soft ambient background gradient glow */}
-      <div className="absolute inset-2 bg-gradient-to-tr from-[#0B6EF3]/8 via-[#20C773]/10 to-[#0B6EF3]/5 rounded-3xl blur-xl -z-10" />
+    <div className="relative w-full max-w-[340px] sm:max-w-[360px] mx-auto my-3 flex items-center justify-center select-none">
+      {/* Soft ambient gradient backdrop glow */}
+      <div className="absolute -inset-2 bg-gradient-to-tr from-[#0B6EF3]/10 via-[#20C773]/12 to-[#0B6EF3]/8 rounded-[32px] blur-2xl -z-10" />
 
-      {/* Main Base Card (Floating Canvas) */}
-      <div className="w-full h-full bg-white/90 backdrop-blur-md rounded-[24px] border border-[#E7ECF3] shadow-[0_12px_36px_-6px_rgba(11,110,243,0.12),0_4px_16px_-2px_rgba(0,0,0,0.04)] p-4 relative flex flex-col justify-between overflow-hidden">
-        {/* Subtle grid pattern in card background */}
+      {/* Main Glassmorphic Hero Canvas Card */}
+      <div className="w-full bg-white/95 backdrop-blur-xl rounded-[26px] border border-[#E7ECF3] shadow-[0_16px_40px_-8px_rgba(11,110,243,0.14),0_4px_16px_-2px_rgba(0,0,0,0.04)] p-4 sm:p-5 relative flex flex-col items-center justify-between overflow-hidden">
+        {/* Subtle decorative dot-grid background */}
         <div
-          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          className="absolute inset-0 opacity-[0.035] pointer-events-none"
           style={{
             backgroundImage:
-              "radial-gradient(#0B6EF3 1px, transparent 1px)",
+              "radial-gradient(#0B6EF3 1.2px, transparent 1.2px)",
             backgroundSize: "16px 16px",
           }}
         />
 
-        {/* Card Header Row: Streak Pill & Micro Badges */}
-        <div className="flex items-center justify-between z-10">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF7ED] border border-[#FDBA74]/30 text-[#EA580C] shadow-2xs">
+        {/* Floating Top Badge Row */}
+        <div className="w-full flex items-center justify-between z-10 mb-1">
+          {/* Streak pill */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF7ED] border border-[#FDBA74]/40 text-[#EA580C] shadow-2xs">
             <Icon name="local_fire_department" size={15} />
             <span className="text-[11px] font-extrabold tracking-wide">
-              7-Day Momentum
+              7-Day Streak
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#20C773] animate-pulse" />
-            <span className="text-[11px] font-bold text-[#20C773] uppercase tracking-wider">
-              Consistent
+          {/* Active status */}
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#ECFDF3] border border-[#20C773]/30 text-[#20C773] shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#20C773] animate-pulse" />
+            <span className="text-[10px] font-extrabold uppercase tracking-wider">
+              Goal Active
             </span>
           </div>
         </div>
 
-        {/* Center Row: Habit Floating Micro Cards & Progress Circle */}
-        <div className="flex items-center justify-between gap-3 z-10 my-auto">
-          {/* Left Stack of Micro Habit Rows */}
-          <div className="flex flex-col gap-2 flex-1 min-w-0">
-            {/* Habit 1 */}
-            <div className="bg-[#FAFBFD] border border-[#E7ECF3] rounded-xl p-2 flex items-center gap-2.5 shadow-2xs hover:border-[#0B6EF3]/30 transition-all">
-              <div className="w-6 h-6 rounded-lg bg-[#ECFDF3] text-[#20C773] flex items-center justify-center shrink-0">
-                <Icon name="check" size={14} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold text-[#111827] truncate">
-                  Morning Mindfulness
-                </p>
-                <p className="text-[9px] text-[#667085] truncate">10 mins • Completed</p>
-              </div>
-            </div>
+        {/* Central Illustration Area with Subtle Floating Elements */}
+        <div className="relative w-full h-44 sm:h-48 flex items-center justify-center my-1">
+          {/* Main Habit Steps Image Illustration */}
+          <div className="relative w-40 h-40 sm:w-44 sm:h-44 transition-transform duration-500 hover:scale-105">
+            <Image
+              src="/images/welcome-hero.png"
+              alt="Building habits step by step"
+              fill
+              className="object-contain drop-shadow-sm"
+              sizes="(max-width: 640px) 180px, 200px"
+              priority
+              unoptimized
+            />
+          </div>
 
-            {/* Habit 2 */}
-            <div className="bg-[#FAFBFD] border border-[#E7ECF3] rounded-xl p-2 flex items-center gap-2.5 shadow-2xs hover:border-[#0B6EF3]/30 transition-all">
-              <div className="w-6 h-6 rounded-lg bg-[#EFF6FF] text-[#0B6EF3] flex items-center justify-center shrink-0">
-                <Icon name="edit_note" size={14} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold text-[#111827] truncate">
-                  Daily Review & Reading
-                </p>
-                <p className="text-[9px] text-[#0B6EF3] font-semibold truncate">Target reached ✨</p>
-              </div>
+          {/* Floating Micro Habit Badge (Top Left) */}
+          <div className="absolute -left-1 top-6 bg-white/95 backdrop-blur-md border border-[#E7ECF3] rounded-xl px-2.5 py-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.06)] flex items-center gap-2 animate-bounce-subtle pointer-events-none">
+            <div className="w-5 h-5 rounded-lg bg-[#ECFDF3] text-[#20C773] flex items-center justify-center">
+              <Icon name="check" size={13} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-[#111827]">
+                Mindfulness
+              </span>
+              <span className="text-[8px] text-[#20C773] font-semibold">
+                Done 100%
+              </span>
             </div>
           </div>
 
-          {/* Right Progress Ring Metric Widget */}
-          <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-[#F4F8FF] to-[#ECFDF3] border border-[#D7E4F9] flex flex-col items-center justify-center shadow-2xs shrink-0">
-            <svg className="w-18 h-18 -rotate-90 transform" viewBox="0 0 36 36">
-              <path
-                className="text-[#E2E8F0]"
-                strokeWidth="3.5"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-              <path
-                className="text-[#20C773]"
-                strokeDasharray="86, 100"
-                strokeWidth="3.5"
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="none"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-            </svg>
-            <div className="absolute flex flex-col items-center justify-center text-center">
-              <span className="text-[15px] font-black text-[#111827] leading-none">
-                86%
+          {/* Floating Progress Micro Ring (Bottom Right) */}
+          <div className="absolute -right-1 bottom-4 bg-white/95 backdrop-blur-md border border-[#E7ECF3] rounded-xl px-2.5 py-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.06)] flex items-center gap-2 pointer-events-none">
+            <div className="w-5 h-5 rounded-lg bg-[#EFF6FF] text-[#0B6EF3] flex items-center justify-center">
+              <Icon name="trending_up" size={13} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-[#111827]">
+                Compound Win
               </span>
-              <span className="text-[8px] font-extrabold text-[#667085] uppercase tracking-wider mt-0.5">
-                Daily Goal
+              <span className="text-[8px] text-[#0B6EF3] font-semibold">
+                +1% Everyday
               </span>
             </div>
           </div>
         </div>
 
-        {/* Card Footer: Growth Milestone Bar */}
-        <div className="flex items-center justify-between text-[11px] font-bold text-[#667085] pt-2 border-t border-[#F0F2F5] z-10">
+        {/* Footer Milestone Row */}
+        <div className="w-full flex items-center justify-between text-[11px] font-bold text-[#667085] pt-2.5 border-t border-[#F0F2F5] z-10">
           <div className="flex items-center gap-1.5 text-[#0B6EF3]">
             <Icon name="spa" size={14} className="text-[#20C773]" />
-            <span>Habit Compound Effect</span>
+            <span>Consistency Journey</span>
           </div>
-          <span className="text-[#20C773] bg-[#ECFDF3] px-2 py-0.5 rounded-full text-[10px] font-extrabold">
-            +1% Every Day
+          <span className="text-[#0B6EF3] bg-[#EFF6FF] px-2 py-0.5 rounded-full text-[10px] font-extrabold border border-[#0B6EF3]/20">
+            Step-by-Step
           </span>
         </div>
       </div>
