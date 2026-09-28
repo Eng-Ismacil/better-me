@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase, ensureIndexes } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
+import { codesMatch, normalizeCode } from "@/lib/admin";
 
 export async function POST(req: Request) {
   try {
@@ -8,7 +9,7 @@ export async function POST(req: Request) {
     const { email, code, newPassword } = body;
 
     const normalizedEmail = String(email || "").trim().toLowerCase();
-    const cleanCode = String(code || "").replace(/\D/g, "").trim();
+    const cleanCode = normalizeCode(code);
     const cleanPassword = String(newPassword || "");
 
     if (!normalizedEmail || !cleanCode || !cleanPassword) {
@@ -28,24 +29,22 @@ export async function POST(req: Request) {
     await ensureIndexes();
     const { db } = await connectToDatabase();
 
-    // Find the latest matching unused reset code for this email
+    // Find latest unused reset for this email, then compare code flexibly
     const resetRecord = await db.collection("passwordResets").findOne(
       {
         email: normalizedEmail,
-        code: cleanCode,
         used: false,
       },
       { sort: { createdAt: -1 } }
     );
 
-    if (!resetRecord) {
-      // Check if code was already used or expired
+    if (!resetRecord || !codesMatch(resetRecord.code, cleanCode)) {
       const anyRecord = await db.collection("passwordResets").findOne(
-        { email: normalizedEmail, code: cleanCode },
+        { email: normalizedEmail },
         { sort: { createdAt: -1 } }
       );
 
-      if (anyRecord && anyRecord.used) {
+      if (anyRecord && anyRecord.used && codesMatch(anyRecord.code, cleanCode)) {
         return NextResponse.json(
           { error: "Koodhkan mar hore ayaa la isticmaalay, fadlan mid cusub dalbo / Code was already used. Please request a new one." },
           { status: 400 }
@@ -58,7 +57,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check expiry
     const now = new Date();
     const expiresAt = new Date(resetRecord.expiresAt);
     if (now > expiresAt) {
@@ -68,10 +66,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Hash the new password
     const hashedPassword = await hashPassword(cleanPassword);
 
-    // Update user's password
     const updateResult = await db.collection("users").updateOne(
       { email: normalizedEmail },
       {
@@ -89,7 +85,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Mark reset code as used
     await db.collection("passwordResets").updateOne(
       { _id: resetRecord._id },
       { $set: { used: true, usedAt: new Date().toISOString() } }

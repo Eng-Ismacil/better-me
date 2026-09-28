@@ -32,6 +32,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (user.deletedAt) {
+      return NextResponse.json(
+        { error: "This account has been deleted" },
+        { status: 403 }
+      );
+    }
+
+    if (user.status === "disabled") {
+      return NextResponse.json(
+        { error: "This account has been disabled" },
+        { status: 403 }
+      );
+    }
+
     const isValid = await verifyPassword(password, user.passwordHash);
     if (!isValid) {
       return NextResponse.json(
@@ -40,16 +54,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user requires 2FA
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userDoc = user as any;
-    if (userDoc.isAdmin && userDoc.twoFactorEnabled) {
-      // Generate 6-digit OTP
+    // Admin with 2FA enabled — require OTP
+    if (user.isAdmin && user.twoFactorEnabled) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const token = randomBytes(20).toString("hex");
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 mins
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-      // Store OTP in db
       await db.collection("twoFactorCodes").deleteMany({ email: normalizedEmail });
       await db.collection("twoFactorCodes").insertOne({
         email: normalizedEmail,
@@ -61,7 +71,6 @@ export async function POST(req: NextRequest) {
         createdAt: new Date().toISOString(),
       });
 
-      // Send via Resend Email
       await sendTwoFactorCode({
         toEmail: normalizedEmail,
         userName: user.name,
@@ -75,8 +84,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Normal session login
+    // Admin without 2FA — go straight to admin panel
     await createSession(user._id?.toString() || "");
+    if (user.isAdmin) {
+      return NextResponse.json({ success: true, redirect: "/admin" });
+    }
+
     return NextResponse.json({ success: true, redirect: "/home" });
   } catch (err: unknown) {
     const error = err as Error;

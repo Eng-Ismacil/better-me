@@ -43,7 +43,7 @@ export default async function MorePage() {
           name: session.name,
           email: session.email,
           avatarUrl: session.avatarUrl || "/images/avatar.jpg",
-          role: session.email === "ismacildahir46@gmail.com" ? "admin" : "user",
+          role: session.isAdmin ? "admin" : "user",
         }}
         stats={{
           totalHabits: habits.length,

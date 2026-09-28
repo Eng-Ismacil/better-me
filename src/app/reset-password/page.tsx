@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import BetterMeLogo from "@/components/brand/BetterMeLogo";
@@ -17,7 +17,15 @@ function ResetPasswordContent() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => setResendCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     const emailParam = searchParams.get("email");
@@ -25,6 +33,36 @@ function ResetPasswordContent() {
     if (emailParam) setEmail(emailParam);
     if (codeParam) setCode(codeParam);
   }, [searchParams]);
+
+  const handleResendCode = useCallback(async () => {
+    if (!email.trim() || resending || resendCooldown > 0) return;
+    setResending(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to resend code");
+      setResendCooldown(60);
+      setMessage({
+        type: "success",
+        text:
+          language === "so"
+            ? "Koodh cusub ayaa lagugu soo diray email-kaaga (Resend)."
+            : "A new reset code was sent to your email via Resend.",
+      });
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: (err as Error).message || "Failed to resend code",
+      });
+    } finally {
+      setResending(false);
+    }
+  }, [email, language, resendCooldown, resending]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,7 +199,7 @@ function ResetPasswordContent() {
                 required
                 maxLength={6}
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 placeholder="e.g. 849201"
                 className="w-full px-4 py-3 rounded-2xl border border-[#E5E7EB] text-[16px] font-mono tracking-widest text-[#101010] text-center focus:border-[#007AFF] outline-none transition-all"
               />
@@ -215,6 +253,25 @@ function ResetPasswordContent() {
           </form>
 
           <div className="flex flex-col items-center gap-2 pt-2 border-t border-[#F3F4F6] text-[13px]">
+            <button
+              type="button"
+              onClick={handleResendCode}
+              disabled={resending || resendCooldown > 0 || !email.trim()}
+              className="font-semibold text-[#007AFF] hover:underline flex items-center gap-1 disabled:text-[#9CA3AF] disabled:no-underline"
+            >
+              <Icon name="mark_email_read" size={16} />
+              {resending
+                ? language === "so"
+                  ? "Waa la dirayaa..."
+                  : "Sending..."
+                : resendCooldown > 0
+                ? language === "so"
+                  ? `Mar kale dir (${resendCooldown}s)`
+                  : `Resend code (${resendCooldown}s)`
+                : language === "so"
+                ? "Mar kale dir koodhka"
+                : "Resend verification code"}
+            </button>
             <Link
               href="/login"
               className="font-semibold text-[#007AFF] hover:underline flex items-center gap-1"

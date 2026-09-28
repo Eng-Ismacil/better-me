@@ -9,6 +9,8 @@ export type HabitDifficulty = "easy" | "medium" | "hard";
 export type HabitFrequency = "daily" | "weekdays" | "custom";
 export type HabitStatus = "active" | "paused" | "archived";
 
+export type UserStatus = "active" | "inactive" | "disabled";
+
 export interface User {
   _id?: string;
   name: string;
@@ -19,6 +21,50 @@ export interface User {
   memberSince: string;
   createdAt: string;
   updatedAt: string;
+  isAdmin?: boolean;
+  twoFactorEnabled?: boolean;
+  status?: UserStatus;
+  deletedAt?: string | null;
+  disabledAt?: string | null;
+  disabledReason?: string;
+  role?: string;
+  phone?: string;
+  notes?: string;
+}
+
+export interface AuditLog {
+  _id?: string;
+  actorId: string;
+  actorEmail: string;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  details?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface FinanceTransaction {
+  _id?: string;
+  userId: string;
+  type: "income" | "expense";
+  amount: number;
+  currency: string;
+  category: string;
+  title: string;
+  notes?: string;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
+export interface BroadcastMessage {
+  _id?: string;
+  title: string;
+  message: string;
+  sentBy: string;
+  recipientCount: number;
+  createdAt: string;
 }
 
 export interface Habit {

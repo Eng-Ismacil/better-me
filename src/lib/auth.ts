@@ -17,6 +17,7 @@ export interface SessionUser {
   email: string;
   avatarUrl?: string;
   memberSince?: string;
+  isAdmin?: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -72,6 +73,8 @@ export async function getSession(): Promise<SessionUser | null> {
       .findOne({ _id: new ObjectId(userId) as unknown as string });
 
     if (!user) return null;
+    if (user.deletedAt) return null;
+    if (user.status === "disabled") return null;
 
     return {
       id: user._id?.toString() || userId,
@@ -79,6 +82,7 @@ export async function getSession(): Promise<SessionUser | null> {
       email: user.email,
       avatarUrl: user.avatarUrl || "/images/avatar.jpg",
       memberSince: user.memberSince || "6 Months",
+      isAdmin: !!user.isAdmin,
     };
   } catch {
     return null;
