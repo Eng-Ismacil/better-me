@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Icon from "./Icon";
 import { useTranslation } from "@/lib/i18n";
+import { clearAdminStatus } from "@/lib/adminStatus";
 
 interface ProfileDropdownProps {
   userName?: string;
@@ -63,6 +64,7 @@ export default function ProfileDropdown({
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
+      clearAdminStatus();
       setIsOpen(false);
       router.push("/welcome");
       router.refresh();

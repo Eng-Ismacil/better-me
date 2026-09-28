@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Icon from "@/components/ui/Icon";
 import InstallAppButton from "@/components/ui/InstallAppButton";
 import { useTranslation } from "@/lib/i18n";
+import { clearAdminStatus } from "@/lib/adminStatus";
 
 interface MoreMenuClientProps {
   user: {
@@ -234,6 +235,7 @@ export default function MoreMenuClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
+      clearAdminStatus();
       router.push("/welcome");
       router.refresh();
     } catch (err) {

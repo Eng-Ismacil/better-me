@@ -9,6 +9,7 @@ import Link from "next/link";
 import ProfileDropdown from "./ProfileDropdown";
 import { useTranslation } from "@/lib/i18n";
 import { subscribeToNotifications } from "@/lib/notificationStore";
+import { getAdminStatus } from "@/lib/adminStatus";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -38,12 +39,9 @@ export default function AppShell({
 
   useEffect(() => {
     let active = true;
-    void fetch("/api/profile")
-      .then((response) => response.json())
-      .then((data) => {
-        if (active) setIsAdmin(Boolean(data.user?.isAdmin));
-      })
-      .catch(() => {});
+    void getAdminStatus().then((value) => {
+      if (active) setIsAdmin(value);
+    });
     return () => {
       active = false;
     };
