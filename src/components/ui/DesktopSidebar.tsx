@@ -64,6 +64,11 @@ export default function DesktopSidebar({
   const secondaryNav = [
     { label: t("nav_profile"), href: "/profile", icon: "account_circle" },
     { label: t("nav_settings"), href: "/settings", icon: "settings" },
+    {
+      label: language === "so" ? "Taageerada & Chat" : "Help & Support",
+      href: "/support",
+      icon: "support_agent",
+    },
   ];
 
   return (

@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/admin/habits", icon: "task_alt", en: "Habits / Tasks", so: "Caadooyinka / Hawlaha" },
   { href: "/admin/streaks", icon: "local_fire_department", en: "Top Streaks", so: "Xiriirrada Sare" },
   { href: "/admin/broadcast", icon: "campaign", en: "Broadcast", so: "Faafinta" },
+  { href: "/admin/support", icon: "support_agent", en: "Support & Chat", so: "Taageerada & Chat" },
   { href: "/admin/recycle-bin", icon: "delete", en: "Recycle Bin", so: "Qashinka" },
   { href: "/admin/audit", icon: "history", en: "Audit Log", so: "Diiwaanka" },
   { href: "/admin/finance", icon: "account_balance_wallet", en: "Finance", so: "Maaliyadda" },

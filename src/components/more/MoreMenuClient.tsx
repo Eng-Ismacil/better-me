@@ -162,6 +162,14 @@ export default function MoreMenuClient({
       color: "#6B7280",
       bg: "#F3F4F6",
     },
+    {
+      label: language === "so" ? "Taageerada & Chat (Live Support)" : "Help & Live Support",
+      desc: language === "so" ? "La hadal adminka toos, weydii su'aalo ama soo lifaaq sawir" : "Chat directly with admin, ask questions or attach screenshots",
+      href: "/support",
+      icon: "support_agent",
+      color: "#8B5CF6",
+      bg: "#F5F3FF",
+    },
     ...(user.role === "admin"
       ? [
           {

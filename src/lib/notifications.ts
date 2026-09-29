@@ -111,3 +111,23 @@ export async function markNotificationAsRead(
       .updateMany({ userId, read: false }, { $set: { read: true } });
   }
 }
+
+export async function deleteNotification(
+  userId: string,
+  notificationId: string
+): Promise<boolean> {
+  const { db } = await connectToDatabase();
+  if (!ObjectId.isValid(notificationId)) return false;
+  const result = await db.collection("notifications").deleteOne({
+    _id: new ObjectId(notificationId),
+    userId,
+  });
+  return result.deletedCount > 0;
+}
+
+export async function clearAllNotifications(userId: string): Promise<number> {
+  const { db } = await connectToDatabase();
+  const result = await db.collection("notifications").deleteMany({ userId });
+  return result.deletedCount;
+}
+

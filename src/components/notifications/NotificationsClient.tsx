@@ -14,11 +14,15 @@ export default function NotificationsClient({
   initialNotifications,
 }: NotificationsClientProps) {
   const { language, t } = useTranslation();
+  const so = language === "so";
+
   const [notifications, setNotifications] = useState<AppNotification[]>(
     initialNotifications
   );
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [markingAll, setMarkingAll] = useState(false);
+  const [clearingAll, setClearingAll] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -46,6 +50,44 @@ export default function NotificationsClient({
     setMarkingAll(true);
     await handleMarkAsRead("all");
     setMarkingAll(false);
+  };
+
+  const handleDelete = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/notifications?id=${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setNotifications((prev) => prev.filter((n) => n._id !== id));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleClearAll = async () => {
+    const confirmMsg = so
+      ? "Ma hubtaa inaad tirtirto dhammaan wargelinta?"
+      : "Are you sure you want to clear all notifications?";
+    if (!window.confirm(confirmMsg)) return;
+
+    setClearingAll(true);
+    try {
+      const res = await fetch("/api/notifications?id=all", {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setNotifications([]);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setClearingAll(false);
+    }
   };
 
   const filtered = notifications.filter((n) => {
@@ -85,51 +127,92 @@ export default function NotificationsClient({
           </h2>
           <p className="text-[13px] text-[#667085] mt-1">
             {unreadCount > 0
-              ? language === "so"
+              ? so
                 ? `Waxaad leedahay ${unreadCount} wargelin oo cusub`
                 : `You have ${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`
-              : language === "so"
+              : so
               ? "Dhammaan wargelintu waa la aqriyay"
               : "All caught up on notifications"}
           </p>
         </div>
 
-        {unreadCount > 0 && (
-          <button
-            type="button"
-            onClick={handleMarkAll}
-            disabled={markingAll}
-            className="px-4 py-2 rounded-xl bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] text-[12px] font-semibold text-[#007AFF] flex items-center gap-1.5 transition-all self-start sm:self-auto"
-          >
-            <Icon name="done_all" size={16} />
-            <span>{t("btn_mark_all_read")}</span>
-          </button>
-        )}
+        {/* Header Action Buttons */}
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              onClick={handleMarkAll}
+              disabled={markingAll}
+              className="px-3.5 py-1.5 rounded-xl bg-white border border-[#E5E7EB] hover:bg-[#F9FAFB] text-[12px] font-semibold text-[#007AFF] flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+            >
+              <Icon name="done_all" size={16} />
+              <span>{t("btn_mark_all_read")}</span>
+            </button>
+          )}
+
+          {notifications.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearAll}
+              disabled={clearingAll}
+              className="px-3.5 py-1.5 rounded-xl bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 text-[12px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+            >
+              <Icon name="delete_sweep" size={16} />
+              <span>{clearingAll ? (so ? "Waa la tirtirayaa..." : "Clearing...") : so ? "Nadiifi Dhammaan" : "Clear All"}</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Tabs */}
+      {/* Support Chat Quick Entry Card */}
+      <Link
+        href="/support"
+        className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-[#0B6EF3]/[0.08] to-[#0B6EF3]/[0.02] border border-[#0B6EF3]/20 hover:border-[#0B6EF3]/40 transition-all group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#0B6EF3] text-white flex items-center justify-center shrink-0 shadow-sm">
+            <Icon name="support_agent" size={22} />
+          </div>
+          <div>
+            <h4 className="text-[13px] font-bold text-[#0F172A] group-hover:text-[#0B6EF3] transition-colors">
+              {so ? "Taageerada Tooska ah (Live Support)" : "Need Help? Chat with Support"}
+            </h4>
+            <p className="text-[11px] text-[#64748B]">
+              {so
+                ? "Fariin toos ah u dir adminka ama soo lifaaq sawir."
+                : "Chat directly with admin or attach screenshot files."}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-[12px] font-bold text-[#0B6EF3] pr-2">
+          <span>{so ? "Fur Chat-ka" : "Open Chat"}</span>
+          <Icon name="arrow_forward" size={16} className="group-hover:translate-x-0.5 transition-transform" />
+        </div>
+      </Link>
+
+      {/* Filter Tabs */}
       <div className="flex items-center gap-2 border-b border-[#E5E7EB] pb-3">
         <button
           type="button"
           onClick={() => setFilter("all")}
-          className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all ${
+          className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all cursor-pointer ${
             filter === "all"
               ? "bg-[#007AFF] text-white"
               : "bg-white text-[#667085] border border-[#E5E7EB]"
           }`}
         >
-          {language === "so" ? "Dhammaan" : "All"} ({notifications.length})
+          {so ? "Dhammaan" : "All"} ({notifications.length})
         </button>
         <button
           type="button"
           onClick={() => setFilter("unread")}
-          className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all ${
+          className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all cursor-pointer ${
             filter === "unread"
               ? "bg-[#007AFF] text-white"
               : "bg-white text-[#667085] border border-[#E5E7EB]"
           }`}
         >
-          {language === "so" ? "Aan La Akhrin" : "Unread"} ({unreadCount})
+          {so ? "Aan La Akhrin" : "Unread"} ({unreadCount})
         </button>
       </div>
 
@@ -144,7 +227,7 @@ export default function NotificationsClient({
               {t("no_notifications")}
             </h4>
             <p className="text-[12px] text-[#667085] max-w-sm">
-              {language === "so"
+              {so
                 ? "Digniinaha iyo warbixinnada ku saabsan streak-gaaga iyo caadooyinkaaga halkan ayaa lagu soo bandhigi doonaa."
                 : "Real-time updates about your streaks, routines, and achievements will appear here."}
             </p>
@@ -152,13 +235,17 @@ export default function NotificationsClient({
         ) : (
           filtered.map((item) => {
             const style = getIconForType(item.type);
+            const isDeleting = deletingId === item._id;
+
             return (
               <div
                 key={item._id}
-                className={`p-4 rounded-2xl border transition-all duration-200 flex items-start gap-3.5 ${
+                className={`p-4 rounded-2xl border transition-all duration-200 flex items-start gap-3.5 relative group ${
+                  isDeleting ? "opacity-30 pointer-events-none scale-98" : ""
+                } ${
                   !item.read
                     ? "bg-white border-[#007AFF]/30 shadow-xs"
-                    : "bg-white/80 border-[#E5E7EB] opacity-80"
+                    : "bg-white/80 border-[#E5E7EB] opacity-85 hover:opacity-100"
                 }`}
               >
                 <div
@@ -191,7 +278,7 @@ export default function NotificationsClient({
                         onClick={() => handleMarkAsRead(item._id)}
                         className="text-[12px] font-semibold text-[#007AFF] hover:underline flex items-center gap-1"
                       >
-                        <span>{language === "so" ? "Fiiri" : "View"}</span>
+                        <span>{so ? "Fiiri" : "View"}</span>
                         <Icon name="arrow_forward" size={14} />
                       </Link>
                     )}
@@ -200,17 +287,30 @@ export default function NotificationsClient({
                       <button
                         type="button"
                         onClick={() => handleMarkAsRead(item._id)}
-                        className="text-[11px] text-[#667085] hover:text-[#101010] font-medium"
+                        className="text-[11px] text-[#667085] hover:text-[#101010] font-medium cursor-pointer"
                       >
-                        {language === "so" ? "Calaamadee in la akhriyay" : "Mark as read"}
+                        {so ? "Calaamadee in la akhriyay" : "Mark as read"}
                       </button>
                     )}
                   </div>
                 </div>
 
-                {!item.read && (
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#007AFF] shrink-0 mt-1" />
-                )}
+                {/* Individual Delete Button & Unread Dot */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {!item.read && (
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#007AFF] shrink-0" />
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={(e) => item._id && handleDelete(item._id, e)}
+                    title={so ? "Tirtir wargelintan" : "Delete notification"}
+                    aria-label={so ? "Tirtir wargelinta" : "Delete notification"}
+                    className="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <Icon name="delete_outline" size={17} />
+                  </button>
+                </div>
               </div>
             );
           })

@@ -1,3 +1,4 @@
+// @ts-ignore
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const serverUrl = process.env.CAPACITOR_SERVER_URL || "https://better-me1.vercel.app";
