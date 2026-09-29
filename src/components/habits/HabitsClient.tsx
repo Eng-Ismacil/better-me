@@ -6,14 +6,6 @@ import Icon from "@/components/ui/Icon";
 import HabitRow from "@/components/ui/HabitRow";
 import { Habit } from "@/types";
 
-const CATEGORY_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  health: { bg: "bg-[#ECFDF3]", text: "text-[#22C55E]", dot: "bg-[#22C55E]" },
-  fitness: { bg: "bg-[#EFF6FF]", text: "text-[#007AFF]", dot: "bg-[#007AFF]" },
-  learning: { bg: "bg-[#FFF7ED]", text: "text-[#F59E0B]", dot: "bg-[#F59E0B]" },
-  mindfulness: { bg: "bg-[#F3F4F6]", text: "text-[#6B7280]", dot: "bg-[#6B7280]" },
-  productivity: { bg: "bg-[#FDF4FF]", text: "text-[#A855F7]", dot: "bg-[#A855F7]" },
-};
-
 const FILTERS = ["All", "Morning", "Evening", "Anytime"] as const;
 
 interface HabitsClientProps {
@@ -22,7 +14,7 @@ interface HabitsClientProps {
 }
 
 export default function HabitsClient({ habits, completedIds: initialCompletedIds }: HabitsClientProps) {
-  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set(initialCompletedIds));
+  const [completedIds, setCompletedIds] = useState<Set<string>>(() => new Set(initialCompletedIds));
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -62,59 +54,71 @@ export default function HabitsClient({ habits, completedIds: initialCompletedIds
   const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
-    <div className="flex flex-col gap-5 select-none">
-      {/* Header Summary */}
-      <section className="w-full bg-white rounded-2xl p-5 border border-[#E5E7EB] shadow-[0_2px_12px_rgba(16,24,40,0.04)] relative overflow-hidden">
+    <div className="flex flex-col gap-5 select-none pb-8">
+      {/* Header Summary Card */}
+      <section className="w-full bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/70 shadow-[0_4px_20px_-4px_rgba(11,110,243,0.05)] relative overflow-hidden">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[12px] font-semibold uppercase tracking-wider text-[#667085]">Today&apos;s Habits</p>
-            <h2 className="text-[22px] font-bold text-[#101010] mt-0.5">
-              {completedCount} <span className="text-[#667085] font-medium">/ {totalCount}</span>
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#0B6EF3]">
+              Daily Habit Tracker
+            </p>
+            <h2 className="text-[24px] font-extrabold text-[#0F172A] tracking-tight mt-0.5">
+              {completedCount}{" "}
+              <span className="text-slate-400 font-semibold text-[18px]">
+                / {totalCount}
+              </span>
             </h2>
-            <p className="text-[13px] text-[#667085] mt-0.5">
-              {percentage === 100 ? "Perfect day! All habits done 🎉" : `${percentage}% complete today`}
+            <p className="text-[13px] text-slate-500 mt-0.5">
+              {percentage === 100
+                ? "Perfect day! All habits done 🎉"
+                : `${percentage}% completed today`}
             </p>
           </div>
           <Link
             href="/habits/new"
-            className="w-11 h-11 rounded-full bg-[#007AFF] flex items-center justify-center text-white shadow-sm hover:bg-[#0070eb] active:scale-95 transition-all"
+            aria-label="Add habit"
+            className="w-12 h-12 rounded-full bg-[#0F172A] hover:bg-[#1E293B] flex items-center justify-center text-white shadow-xs active:scale-95 transition-all"
           >
             <Icon name="add" size={22} />
           </Link>
         </div>
+
         {/* Progress bar */}
-        <div className="mt-4 h-1.5 w-full bg-[#f0edec] rounded-full overflow-hidden">
+        <div className="mt-4 h-2 w-full bg-slate-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#007AFF] rounded-full transition-all duration-500"
+            className="h-full bg-[#0B6EF3] rounded-full transition-all duration-500"
             style={{ width: `${percentage}%` }}
           />
         </div>
-        <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-[#EFF6FF]/60 blur-2xl pointer-events-none" />
       </section>
 
-      {/* Search */}
+      {/* Search Input */}
       <div className="relative">
-        <Icon name="search" size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#667085]" />
+        <Icon
+          name="search"
+          size={18}
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+        />
         <input
           type="text"
-          placeholder="Search habits..."
+          placeholder="Search your habits..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 text-[14px] bg-white rounded-xl border border-[#E5E7EB] focus:border-[#007AFF] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 transition-all"
+          className="w-full pl-10 pr-4 py-3 text-[14px] bg-white rounded-2xl border border-slate-200/80 focus:border-[#0B6EF3] focus:outline-none focus:ring-2 focus:ring-[#0B6EF3]/15 transition-all shadow-2xs"
         />
       </div>
 
-      {/* Time of Day Filter Pills */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      {/* Segmented Filter Control (Torin iOS Style) */}
+      <div className="bg-slate-200/60 p-1 rounded-2xl flex gap-1 overflow-x-auto no-scrollbar">
         {FILTERS.map((f) => (
           <button
             key={f}
             type="button"
             onClick={() => setActiveFilter(f)}
-            className={`shrink-0 px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all ${
+            className={`flex-1 min-w-[70px] py-1.5 px-3 rounded-xl text-[12px] font-bold transition-all text-center cursor-pointer ${
               activeFilter === f
-                ? "bg-[#007AFF] text-white shadow-sm"
-                : "bg-white text-[#667085] border border-[#E5E7EB] hover:border-[#007AFF]"
+                ? "bg-white text-[#0F172A] shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
             }`}
           >
             {f}
@@ -122,15 +126,17 @@ export default function HabitsClient({ habits, completedIds: initialCompletedIds
         ))}
       </div>
 
-      {/* Habits by Category */}
+      {/* Habits List */}
       {filtered.length === 0 ? (
-        <div className="p-10 bg-white rounded-2xl border border-[#E5E7EB] flex flex-col items-center text-center">
-          <Icon name="manage_search" size={36} className="text-[#667085] mb-3" />
-          <p className="text-[15px] font-semibold text-[#101010]">No habits found</p>
-          <p className="text-[13px] text-[#667085] mt-1">Try a different filter or search term</p>
+        <div className="p-10 bg-white rounded-3xl border border-slate-200/70 flex flex-col items-center text-center shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0B6EF3] flex items-center justify-center mb-3">
+            <Icon name="manage_search" size={26} />
+          </div>
+          <p className="text-[16px] font-bold text-[#0F172A]">No habits found</p>
+          <p className="text-[13px] text-slate-500 mt-1">Try a different filter or search term</p>
           <Link
             href="/habits/new"
-            className="mt-5 px-5 py-2.5 bg-[#007AFF] text-white rounded-full text-[13px] font-semibold"
+            className="mt-5 px-5 py-2.5 bg-[#0F172A] text-white hover:bg-[#1E293B] rounded-full text-[13px] font-bold active:scale-95 transition-all"
           >
             + Add a new habit
           </Link>
@@ -144,23 +150,15 @@ export default function HabitsClient({ habits, completedIds: initialCompletedIds
                 isCompleted={completedIds.has(habit._id || "")}
                 onToggle={handleToggle}
               />
-              {/* Quick Edit button */}
-              <Link
-                href={`/habits/${habit._id}`}
-                className="absolute top-4 right-14 w-7 h-7 rounded-full bg-[#F4F8FF] border border-[#E7ECF3] flex items-center justify-center text-[#0B6EF3] opacity-0 group-hover:opacity-100 hover:bg-[#0B6EF3] hover:text-white transition-all shadow-2xs z-10"
-                title="Edit / Wax ka bedel"
-              >
-                <Icon name="edit" size={14} />
-              </Link>
             </div>
           ))}
         </div>
       )}
 
-      {/* Add Habit CTA at bottom */}
+      {/* Add Habit CTA button */}
       <Link
         href="/habits/new"
-        className="w-full h-14 border-2 border-dashed border-[#d8e2ff] rounded-2xl flex items-center justify-center gap-2 text-[#007AFF] text-[14px] font-semibold hover:bg-[#EFF6FF] transition-all"
+        className="w-full h-13 border-2 border-dashed border-slate-300 hover:border-[#0B6EF3] rounded-2xl flex items-center justify-center gap-2 text-slate-700 hover:text-[#0B6EF3] text-[14px] font-bold bg-white/50 hover:bg-blue-50/40 transition-all cursor-pointer"
       >
         <Icon name="add_circle" size={20} />
         <span>Add New Habit</span>
