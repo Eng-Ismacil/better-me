@@ -1,31 +1,50 @@
 "use client";
 
 import { useEffect } from "react";
-import { App } from "@capacitor/app";
-import { Capacitor, type PluginListenerHandle } from "@capacitor/core";
 import { useRouter } from "next/navigation";
 
+/**
+ * NativeBackButton
+ * Handles the Android hardware back button when running inside a Capacitor
+ * WebView. If Capacitor is not available (e.g. plain PWA in browser) the
+ * component is a no-op, so it is safe to render everywhere.
+ */
 export default function NativeBackButton() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    // Dynamically import Capacitor so the bundle is not broken when the
+    // @capacitor/* packages are absent (plain PWA / desktop browser).
+    let cleanup: (() => void) | undefined;
 
-    let listener: PluginListenerHandle | undefined;
-    let disposed = false;
+    void (async () => {
+      try {
+        const [{ Capacitor }, { App }] = await Promise.all([
+          import("@capacitor/core"),
+          import("@capacitor/app"),
+        ]);
 
-    void App.addListener("backButton", ({ canGoBack }) => {
-      if (canGoBack) router.back();
-      else void App.exitApp();
-    }).then((handle) => {
-      if (disposed) void handle.remove();
-      else listener = handle;
-    });
+        if (!Capacitor.isNativePlatform()) return;
 
-    return () => {
-      disposed = true;
-      void listener?.remove();
-    };
+        let disposed = false;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const handle = await App.addListener("backButton", ({ canGoBack }: { canGoBack: boolean }) => {
+          if (canGoBack) router.back();
+          else void App.exitApp();
+        });
+
+        if (disposed) void handle.remove();
+
+        cleanup = () => {
+          disposed = true;
+          void handle.remove();
+        };
+      } catch {
+        // Capacitor not installed — silently ignore
+      }
+    })();
+
+    return () => cleanup?.();
   }, [router]);
 
   return null;

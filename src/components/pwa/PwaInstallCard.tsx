@@ -15,119 +15,122 @@ export default function PwaInstallCard() {
   const so = language === "so";
 
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isStandalone, setIsStandalone] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(true); // hidden by default — shown only after env check
   const [isDismissed, setIsDismissed] = useState(false);
   const [showIosGuide, setShowIosGuide] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  // promptReady: true = we have a real install prompt OR on iOS; false = browser can't install
+  const [promptReady, setPromptReady] = useState(false);
 
   useEffect(() => {
-    // Check if already running in standalone webview/PWA mode
-    const standaloneMatch = window.matchMedia("(display-mode: standalone)").matches;
-    const navigatorStandalone = (window.navigator as unknown as { standalone?: boolean }).standalone;
-    if (standaloneMatch || navigatorStandalone) {
+    // Already running as installed PWA / WebView standalone — hide permanently
+    const standaloneMedia = window.matchMedia("(display-mode: standalone)").matches;
+    const iosSA = (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+    if (standaloneMedia || iosSA) {
       setIsStandalone(true);
       return;
     }
+    setIsStandalone(false);
 
-    // Check if dismissed previously in session
-    if (sessionStorage.getItem("betterme_pwa_dismissed") === "true") {
+    // Previously dismissed this session
+    if (sessionStorage.getItem("bm_pwa_dismissed") === "1") {
       setIsDismissed(true);
+      return;
     }
 
-    // Detect iOS
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isAppleDevice = /iphone|ipad|ipod/.test(userAgent);
-    setIsIos(isAppleDevice);
+    // Detect iOS Safari (no beforeinstallprompt — use manual guide instead)
+    const ua = window.navigator.userAgent.toLowerCase();
+    const ios = /iphone|ipad|ipod/.test(ua) && !/(chrome|android)/.test(ua);
+    setIsIos(ios);
+    if (ios) {
+      // On iOS we can always show the guide
+      setPromptReady(true);
+    }
 
-    const handleBeforeInstallPrompt = (e: Event) => {
+    // Capture the browser's native install prompt (Chrome / Edge / Samsung)
+    const handler = (e: Event) => {
       e.preventDefault();
       setInstallPrompt(e as BeforeInstallPromptEvent);
+      setPromptReady(true); // now we have a real prompt — show card
     };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  const handleInstallClick = async () => {
+  const handleInstall = async () => {
+    if (installing) return;
+
     if (installPrompt) {
+      // Native browser install dialog — no alert, direct prompt
+      setInstalling(true);
       await installPrompt.prompt();
-      const choice = await installPrompt.userChoice;
-      if (choice.outcome === "accepted") {
+      const { outcome } = await installPrompt.userChoice;
+      setInstalling(false);
+      if (outcome === "accepted") {
         setInstallPrompt(null);
+        setIsStandalone(true); // hide card — app is installed
       }
     } else if (isIos) {
+      // iOS Safari: show step-by-step modal
       setShowIosGuide(true);
-    } else {
-      // Direct Chrome / Android fallback instruction
-      alert(
-        so
-          ? "Si aad appka u rakibto: Taabo saddexda dhibcood ee browserka (⋮) kaddibna dooro 'Install app' ama 'Add to Home screen'."
-          : "To install: Tap the browser menu (⋮) and select 'Install app' or 'Add to Home screen'."
-      );
     }
+    // No alert fallback — if neither condition is met, button shouldn't be visible
   };
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsDismissed(true);
-    sessionStorage.setItem("betterme_pwa_dismissed", "true");
+    sessionStorage.setItem("bm_pwa_dismissed", "1");
   };
 
-  // Do not show if already in standalone app mode or dismissed
-  if (isStandalone || isDismissed) {
-    return null;
-  }
+  // Hide if already installed (standalone) or dismissed or no install mechanism available
+  if (isStandalone || isDismissed || !promptReady) return null;
 
   return (
     <>
-      <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.04)] flex items-center justify-between gap-3 transition-all">
+      {/* Install Banner */}
+      <div className="w-full bg-gradient-to-r from-[#0B6EF3]/[0.06] to-transparent border border-[#0B6EF3]/20 rounded-2xl p-3.5 flex items-center gap-3 shadow-[0_2px_12px_-4px_rgba(11,110,243,0.12)] transition-all">
         {/* App Icon */}
-        <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 shadow-2xs border border-slate-100 bg-[#FCF9F8] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-2xl overflow-hidden border border-slate-200/60 shadow-sm shrink-0 bg-white">
           <Image
             src="/icon-192.png"
-            alt="BetterMe Icon"
-            width={44}
-            height={44}
-            className="object-cover"
+            alt="BetterMe"
+            width={48}
+            height={48}
+            className="object-cover w-full h-full"
             priority
           />
         </div>
 
-        {/* Content */}
-        <div className="flex flex-col min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <h4 className="text-[14px] font-bold text-[#0F172A] tracking-tight">
-              BetterMe App
-            </h4>
-            <span className="px-1.5 py-0.5 rounded-full bg-blue-50 text-[#0B6EF3] text-[10px] font-extrabold uppercase tracking-wide">
-              PWA
-            </span>
-          </div>
-          <p className="text-[12px] text-[#64748B] truncate mt-0.5">
-            {so
-              ? "Ku shub shaashadda · Standalone Webview"
-              : "Install to phone · Fullscreen app mode"}
+        {/* Text */}
+        <div className="flex-1 min-w-0">
+          <p className="text-[14px] font-extrabold text-[#0F172A] tracking-tight">BetterMe</p>
+          <p className="text-[12px] text-[#64748B] mt-0.5 truncate">
+            {so ? "Ku rakib taleefankaaga · Bilaash" : "Install on your phone · Free"}
           </p>
         </div>
 
-        {/* Action Button & Dismiss */}
+        {/* Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
-            onClick={handleInstallClick}
-            className="px-3.5 py-1.5 rounded-full bg-[#0F172A] hover:bg-[#1E293B] active:scale-95 text-white text-[12px] font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+            onClick={handleInstall}
+            disabled={installing}
+            className="px-4 py-1.5 rounded-full bg-[#0B6EF3] hover:bg-[#0957C3] active:scale-95 disabled:opacity-70 text-white text-[12px] font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
-            <Icon name="download" size={15} />
-            <span>{so ? "Ku shub" : "Install"}</span>
+            {installing ? (
+              <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Icon name="download" size={14} />
+            )}
+            <span>{so ? "Rakib" : "Install"}</span>
           </button>
 
           <button
             type="button"
             onClick={handleDismiss}
-            aria-label="Dismiss banner"
+            aria-label="Dismiss"
             className="w-7 h-7 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
           >
             <Icon name="close" size={16} />
@@ -135,66 +138,63 @@ export default function PwaInstallCard() {
         </div>
       </div>
 
-      {/* iOS Safari Instruction Modal */}
+      {/* iOS Guide Modal */}
       {showIosGuide && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl border border-slate-100 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-6 duration-200">
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+          onClick={() => setShowIosGuide(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-100 shadow-2xs">
-                  <Image
-                    src="/icon-192.png"
-                    alt="BetterMe Icon"
-                    width={40}
-                    height={40}
-                  />
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+                  <Image src="/icon-192.png" alt="BetterMe" width={44} height={44} />
                 </div>
                 <div>
-                  <h4 className="text-[15px] font-bold text-slate-900">
-                    {so ? "Ku shub iPhone-kaaga" : "Install on iPhone"}
+                  <h4 className="text-[15px] font-extrabold text-slate-900">
+                    {so ? "Ku rakib iPhone-kaaga" : "Add to iPhone"}
                   </h4>
-                  <p className="text-[11px] text-slate-500">BetterMe Web App</p>
+                  <p className="text-[11px] text-slate-500">BetterMe</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowIosGuide(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer"
               >
                 <Icon name="close" size={18} />
               </button>
             </div>
 
-            <div className="flex flex-col gap-3 py-1 text-[13px] text-slate-700">
-              <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-2xl">
-                <span className="w-6 h-6 rounded-full bg-[#0B6EF3] text-white text-xs font-bold flex items-center justify-center shrink-0">
-                  1
-                </span>
-                <p>
-                  {so
-                    ? "Taabo badhanka 'Share' ee biraawsarka Safari (calaamadda sanduuqa leh falaarta kor u socota ⎋)."
-                    : "Tap the 'Share' icon at the bottom of Safari (box with upward arrow ⎋)."}
-                </p>
-              </div>
-
-              <div className="flex items-start gap-3 bg-slate-50 p-3 rounded-2xl">
-                <span className="w-6 h-6 rounded-full bg-[#0B6EF3] text-white text-xs font-bold flex items-center justify-center shrink-0">
-                  2
-                </span>
-                <p>
-                  {so
-                    ? "Hoos u rog liiska, kaddibna dooro 'Add to Home Screen' (Ku dar Shaashadda Guriga ⊕)."
-                    : "Scroll down the share sheet and tap 'Add to Home Screen' ⊕."}
-                </p>
-              </div>
+            {/* Steps */}
+            <div className="flex flex-col gap-3">
+              {[
+                so
+                  ? "Taabo badhanka «Share» (sanduuq + fallaar kor) ee hoose Safari"
+                  : "Tap the Share button (box + arrow up) at the bottom of Safari",
+                so
+                  ? "Dooro «Add to Home Screen» oo taabo «Add»"
+                  : "Select «Add to Home Screen», then tap «Add»",
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-3 bg-slate-50 p-3 rounded-2xl">
+                  <span className="w-6 h-6 rounded-full bg-[#0B6EF3] text-white text-[11px] font-extrabold flex items-center justify-center shrink-0 mt-px">
+                    {i + 1}
+                  </span>
+                  <p className="text-[13px] text-slate-700 leading-snug">{step}</p>
+                </div>
+              ))}
             </div>
 
             <button
               type="button"
               onClick={() => setShowIosGuide(false)}
-              className="w-full py-3 rounded-full bg-[#0F172A] text-white text-[13px] font-bold hover:bg-[#1E293B] transition-colors"
+              className="w-full py-3 rounded-full bg-[#0F172A] text-white text-[13px] font-bold hover:bg-[#1E293B] transition-colors cursor-pointer"
             >
-              {so ? "Waan fahmay" : "Got it"}
+              {so ? "Waan fahmay ✓" : "Got it ✓"}
             </button>
           </div>
         </div>
