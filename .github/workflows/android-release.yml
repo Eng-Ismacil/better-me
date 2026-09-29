@@ -1,0 +1,68 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - cursor-admin-update-codes
+    paths:
+      - "android/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "resources/**"
+      - "web-assets/**"
+      - ".github/workflows/android-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Sync Capacitor Android project
+        run: npm run android:sync
+
+      - name: Build debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug
+          mkdir -p ../release
+          cp app/build/outputs/apk/debug/app-debug.apk ../release/BetterMe.apk
+
+      - name: Publish APK download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-build-${{ github.run_number }}-${{ github.run_attempt }}
+          name: BetterMe Android build ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          files: release/BetterMe.apk
+          make_latest: true
+          generate_release_notes: true

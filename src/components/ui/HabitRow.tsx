@@ -22,10 +22,12 @@ export default function HabitRow({
   const [streak, setStreak] = useState(habit.currentStreak || 0);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Sync state if props change
-  React.useEffect(() => {
+  // Sync if prop changes without calling setState in an effect
+  const [prevInitial, setPrevInitial] = useState(initialCompleted);
+  if (prevInitial !== initialCompleted) {
+    setPrevInitial(initialCompleted);
     setCompleted(initialCompleted);
-  }, [initialCompleted]);
+  }
 
   const handleToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -40,19 +42,19 @@ export default function HabitRow({
     if (nextState) {
       try {
         confetti({
-          particleCount: 30,
-          spread: 50,
+          particleCount: 25,
+          spread: 45,
           origin: {
             x: e.clientX / window.innerWidth,
             y: e.clientY / window.innerHeight,
           },
-          colors: ["#20C773", "#0B6EF3", "#86EFAC"],
-          ticks: 120,
+          colors: ["#10B981", "#0B6EF3", "#38BDF8"],
+          ticks: 100,
           gravity: 1.2,
           scalar: 0.75,
         });
       } catch {
-        // Fallback gracefully if confetti fails
+        // Fallback gracefully if canvas confetti fails
       }
     }
 
@@ -68,20 +70,19 @@ export default function HabitRow({
     }
   };
 
-  // Category styling
   const getCategoryStyles = () => {
     switch (habit.category?.toLowerCase()) {
       case "health":
-        return { bg: "bg-[#F4F8FF]", text: "text-[#0B6EF3]", border: "border-[#D0E2FF]" };
+        return { bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-100" };
       case "mindfulness":
-        return { bg: "bg-[#F5F3FF]", text: "text-[#8B5CF6]", border: "border-[#DDD6FE]" };
+        return { bg: "bg-purple-50", text: "text-purple-600", border: "border-purple-100" };
       case "fitness":
-        return { bg: "bg-[#FFF7ED]", text: "text-[#EA580C]", border: "border-[#FED7AA]" };
+        return { bg: "bg-orange-50", text: "text-orange-600", border: "border-orange-100" };
       case "learning":
-        return { bg: "bg-[#FEF3C7]", text: "text-[#D97706]", border: "border-[#FDE68A]" };
+        return { bg: "bg-amber-50", text: "text-amber-600", border: "border-amber-100" };
       case "productivity":
       default:
-        return { bg: "bg-[#ECFDF3]", text: "text-[#20C773]", border: "border-[#A7F3D0]" };
+        return { bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100" };
     }
   };
 
@@ -93,36 +94,40 @@ export default function HabitRow({
 
   return (
     <div
-      className={`group w-full min-h-[64px] bg-white rounded-[16px] p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-all duration-200 shadow-[0_2px_8px_-2px_rgba(17,24,39,0.04)] hover:shadow-md ${
+      className={`group w-full min-h-[64px] bg-white rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-3.5 transition-all duration-200 border ${
         completed
-          ? "border-l-[4px] border-l-[#20C773] border-t border-r border-b border-[#E7ECF3] bg-[#FCFDFD]"
-          : "border border-[#E7ECF3]"
+          ? "border-emerald-200/60 bg-emerald-50/[0.15]"
+          : "border-slate-200/70 hover:border-slate-300 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)]"
       }`}
     >
       <Link
         href={`/habits/${habit._id}`}
         className="flex items-center gap-3.5 min-w-0 flex-1 select-none"
       >
+        {/* Category Squircle Icon */}
         <div
-          className={`w-11 h-11 rounded-[12px] ${catStyle.bg} ${catStyle.text} border ${catStyle.border} flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-2xs`}
+          className={`w-11 h-11 rounded-xl ${catStyle.bg} ${catStyle.text} border ${catStyle.border} flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-2xs`}
         >
           <Icon name={habit.icon || "check_circle"} size={22} />
         </div>
 
+        {/* Content */}
         <div className="flex flex-col min-w-0">
           <h4
-            className={`text-[15px] font-bold text-[#111827] truncate transition-colors ${
-              completed ? "line-through text-[#667085]/90" : "text-[#111827]"
+            className={`text-[15px] font-bold tracking-tight truncate transition-colors ${
+              completed ? "line-through text-slate-400" : "text-[#0F172A]"
             }`}
           >
             {habit.name}
           </h4>
+
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-[12px] text-[#667085] font-medium">
+            <span className="text-[12px] text-slate-500 font-medium">
               {categoryLabel} • {difficultyLabel}
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FFFBEB] text-[#D97706] text-[11px] font-bold border border-[#FDE68A]/70">
-              <Icon name="bolt" size={13} className="text-[#D97706]" />
+
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-200/60">
+              <Icon name="bolt" size={13} className="text-amber-600" />
               <span>
                 {streak} {streak === 1 ? "day" : "days"}
               </span>
@@ -131,20 +136,24 @@ export default function HabitRow({
         </div>
       </Link>
 
+      {/* Completion Toggle Button */}
       <button
         type="button"
         aria-label={`Mark ${habit.name} as ${completed ? "incomplete" : "complete"}`}
         onClick={handleToggle}
         disabled={isUpdating}
-        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 active:scale-85 cursor-pointer ${
+        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 active:scale-85 cursor-pointer ${
           completed
-            ? "bg-[#20C773] text-white border-2 border-[#20C773] shadow-[0_2px_8px_rgba(32,199,115,0.35)] animate-check-pop"
-            : "bg-white text-transparent hover:border-[#0B6EF3] hover:bg-[#0B6EF3]/5 border-2 border-[#D1D5DB]"
+            ? "bg-[#10B981] text-white shadow-[0_2px_10px_rgba(16,185,129,0.35)]"
+            : "bg-white hover:bg-slate-50 border-2 border-slate-300 text-transparent"
         }`}
       >
-        <Icon name="check" size={17} className={completed ? "text-white" : "opacity-0"} />
+        <Icon
+          name="check"
+          size={18}
+          className={completed ? "text-white" : "opacity-0"}
+        />
       </button>
     </div>
   );
 }
-

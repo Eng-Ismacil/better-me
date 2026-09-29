@@ -25,6 +25,7 @@ export const metadata: Metadata = {
   applicationName: "BetterMe",
   description:
     "Small consistent actions create meaningful progress. Design healthy routines and track your daily momentum with calm precision.",
+  manifest: "/manifest.json",
   icons: {
     icon: "/favicon.svg",
     apple: "/icon-192.png",
@@ -48,6 +49,7 @@ export const viewport: Viewport = {
 export const dynamic = "force-dynamic";
 
 import AppProviders from "@/components/providers/AppProviders";
+import PwaRegister from "@/components/pwa/PwaRegister";
 
 export default async function RootLayout({
   children,
@@ -118,6 +120,7 @@ async function getRootContent(children: React.ReactNode) {
         suppressHydrationWarning
         className="min-h-full flex flex-col bg-[#FCF9F8] text-[#101010] antialiased selection:bg-[#EFF6FF]"
       >
+        <PwaRegister />
         <AppProviders>{page}</AppProviders>
       </body>
     </html>

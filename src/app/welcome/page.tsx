@@ -7,6 +7,7 @@ import WelcomeIllustration from "@/components/auth/WelcomeIllustration";
 import BenefitItem from "@/components/auth/BenefitItem";
 import PrimaryButton from "@/components/auth/PrimaryButton";
 import Icon from "@/components/ui/Icon";
+import AndroidAppDownloadCard from "@/components/home/AndroidAppDownloadCard";
 import { useTranslation } from "@/lib/i18n";
 
 export default function WelcomePage() {
@@ -101,6 +102,9 @@ export default function WelcomePage() {
               {language === "so" ? "Gal Akoonka" : "Sign in"}
             </span>
           </Link>
+        </div>
+        <div className="mt-4 w-full">
+          <AndroidAppDownloadCard />
         </div>
       </div>
     </AuthLayout>
