@@ -8,6 +8,7 @@ import BetterMeLogo from "@/components/brand/BetterMeLogo";
 import Icon from "./Icon";
 import { useTranslation } from "@/lib/i18n";
 import { subscribeToNotifications } from "@/lib/notificationStore";
+import PrefetchLink from "@/components/navigation/PrefetchLink";
 
 interface DesktopSidebarProps {
   userName?: string;
@@ -102,7 +103,7 @@ export default function DesktopSidebar({
             (item.href !== "/home" && pathname?.startsWith(item.href));
 
           return (
-            <Link
+            <PrefetchLink
               key={item.href}
               href={item.href}
               className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-[14px] transition-all ${
@@ -124,7 +125,7 @@ export default function DesktopSidebar({
                   {item.badge}
                 </span>
               )}
-            </Link>
+            </PrefetchLink>
           );
         })}
 
@@ -134,7 +135,7 @@ export default function DesktopSidebar({
         {secondaryNav.map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link
+            <PrefetchLink
               key={item.href}
               href={item.href}
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-[14px] transition-all ${
@@ -149,7 +150,7 @@ export default function DesktopSidebar({
                 className={isActive ? "text-[#007AFF]" : "text-[#717786]"}
               />
               <span>{item.label}</span>
-            </Link>
+            </PrefetchLink>
           );
         })}
       </div>

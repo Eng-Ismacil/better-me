@@ -4,7 +4,7 @@ import { connectToDatabase } from "@/lib/db";
 import { getUserHabits } from "@/lib/habits";
 import AppShell from "@/components/ui/AppShell";
 import RoutinesClient from "@/components/routines/RoutinesClient";
-import { Routine } from "@/types";
+import { Routine, Habit } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +22,23 @@ export default async function RoutinesPage() {
     db.collection<Routine>("routines").find({ userId: session.id }).toArray(),
   ]);
 
-  const routines: Routine[] = rawRoutines.map((r) => ({
-    ...r,
-    _id: r._id?.toString(),
-  }));
+  const serializedRoutines: Routine[] = JSON.parse(
+    JSON.stringify(
+      rawRoutines.map((r) => ({
+        ...r,
+        _id: r._id?.toString(),
+      }))
+    )
+  );
+
+  const serializedHabits: Habit[] = JSON.parse(
+    JSON.stringify(
+      habits.map((h) => ({
+        ...h,
+        _id: h._id?.toString(),
+      }))
+    )
+  );
 
   return (
     <AppShell
@@ -34,7 +47,7 @@ export default async function RoutinesPage() {
       userEmail={session.email}
       avatarUrl={session.avatarUrl}
     >
-      <RoutinesClient routines={routines} habits={habits} />
+      <RoutinesClient routines={serializedRoutines} habits={serializedHabits} />
     </AppShell>
   );
 }

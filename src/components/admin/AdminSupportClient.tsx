@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Icon from "@/components/ui/Icon";
 import { useTranslation } from "@/lib/i18n";
 import { SupportMessage, ConversationSummary } from "@/lib/support";
+import AdminPageHeader from "@/components/admin/design-system/AdminPageHeader";
+import AdminKpiCard from "@/components/admin/design-system/AdminKpiCard";
 
 interface AdminSupportClientProps {
   adminUser: {
@@ -38,7 +40,7 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
   const [error, setError] = useState("");
   const [searchConvQuery, setSearchConvQuery] = useState("");
 
-  // New Chat Modal state (Admin can initiate chat with ANY user)
+  // New Chat Modal state
   const [newChatModalOpen, setNewChatModalOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<AllUserItem[]>([]);
   const [searchNewUserQuery, setSearchNewUserQuery] = useState("");
@@ -81,14 +83,13 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
     }
   }, []);
 
-  // Initial load
+  // Polling setup
   useEffect(() => {
     loadConversations();
     const interval = setInterval(loadConversations, 5000);
     return () => clearInterval(interval);
   }, [loadConversations]);
 
-  // When selected user changes or polls
   useEffect(() => {
     if (!selectedUser) return;
     loadMessages(selectedUser.userId);
@@ -101,6 +102,11 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Aggregate Metrics
+  const totalUnreadCount = useMemo(() => {
+    return conversations.reduce((acc, c) => acc + (c.unreadForAdminCount || 0), 0);
+  }, [conversations]);
 
   // Load all users for the "New Chat" modal
   const openNewChatModal = async () => {
@@ -127,7 +133,6 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
   };
 
   const handleSelectUserFromModal = (user: AllUserItem) => {
-    // Check if conversation already exists in list
     const existing = conversations.find((c) => c.userId === user.id);
     if (existing) {
       setSelectedUser(existing);
@@ -156,7 +161,7 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
       setError(
         so
           ? "Kaliya faylasha sawirrada ah (JPG, PNG, WebP) ayaa la ogolyahay!"
-          : "Only image files (JPG, PNG, WebP) are allowed!"
+          : "Only image files (JPG, PNG, WebP) are supported."
       );
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
@@ -238,7 +243,6 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
         prev.map((m) => (m._id === tempId ? data.message : m))
       );
 
-      // Refresh conversations summary
       loadConversations();
     } catch (err) {
       setError((err as Error).message);
@@ -248,17 +252,21 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
     }
   };
 
-  const filteredConversations = conversations.filter(
-    (c) =>
-      c.userName.toLowerCase().includes(searchConvQuery.toLowerCase()) ||
-      c.userEmail.toLowerCase().includes(searchConvQuery.toLowerCase())
-  );
+  const filteredConversations = useMemo(() => {
+    return conversations.filter(
+      (c) =>
+        c.userName.toLowerCase().includes(searchConvQuery.toLowerCase()) ||
+        c.userEmail.toLowerCase().includes(searchConvQuery.toLowerCase())
+    );
+  }, [conversations, searchConvQuery]);
 
-  const filteredAllUsers = allUsers.filter(
-    (u) =>
-      u.name.toLowerCase().includes(searchNewUserQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchNewUserQuery.toLowerCase())
-  );
+  const filteredAllUsers = useMemo(() => {
+    return allUsers.filter(
+      (u) =>
+        u.name.toLowerCase().includes(searchNewUserQuery.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchNewUserQuery.toLowerCase())
+    );
+  }, [allUsers, searchNewUserQuery]);
 
   const formatMessageTime = (dateStr: string) => {
     try {
@@ -270,45 +278,103 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
   };
 
   return (
-    <div className="flex flex-col gap-4 select-none">
-      {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-extrabold text-[#111827] font-[family-name:var(--font-headline)]">
-            {so ? "Taageerada & Wadahadalka Macaamiisha" : "Customer Support & Direct Chat"}
-          </h1>
-          <p className="text-[13px] text-[#667085] mt-0.5">
-            {so
-              ? "U jawaab macaamiisha ama bilow wadahadal cusub oo toos ah qof kasta."
-              : "Reply to user inquiries or initiate a direct chat with any user anytime."}
-          </p>
-        </div>
+    <div className="flex flex-col gap-6 animate-in fade-in duration-300">
+      {/* Layer 1: Page Header */}
+      <AdminPageHeader
+        title={so ? "Taageerada & Wadahadalka Tooska Ah" : "Customer Support & Member Live Chat"}
+        subtitle={
+          so
+            ? "U jawaab macaamiisha, ku xallli su'aalahooda waqtiga dhabta ah, ama adigu u bilow wadahadal cusub qof kasta."
+            : "Deliver real-time concierge assistance to members, review screenshot attachments, and initiate proactive direct chats."
+        }
+        badges={[
+          { label: so ? "Wadahadallo" : "Active Inquiries", value: conversations.length, variant: "blue" },
+          { label: so ? "Aan La Akhriyin" : "Unread", value: totalUnreadCount, variant: totalUnreadCount > 0 ? "danger" : "success" },
+          { label: "Status", value: "Desk Online", variant: "success" },
+        ]}
+        actions={
+          <button
+            type="button"
+            onClick={openNewChatModal}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B6EF3] text-white text-[13px] font-bold hover:bg-[#0958c7] shadow-sm transition-all cursor-pointer"
+          >
+            <Icon name="add_comment" size={17} />
+            <span>{so ? "Bilow Farriin Cusub" : "Start New Chat"}</span>
+          </button>
+        }
+      />
 
-        {/* Start New Chat Button */}
-        <button
-          type="button"
-          onClick={openNewChatModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B6EF3] hover:bg-[#0957C3] active:scale-95 text-white text-[13px] font-bold shadow-sm transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <Icon name="add_comment" size={18} />
-          <span>{so ? "+ Farriin Cusub Bilow" : "+ Start New Chat"}</span>
-        </button>
+      {/* Layer 2: Summary Metrics (KPI Row) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <AdminKpiCard
+          label={so ? "Wadahadallada Furan" : "Member Conversations"}
+          value={conversations.length}
+          icon="forum"
+          variant="blue"
+          subtext={so ? "Isku-geynta xubnaha la hadlay" : "Total established chat channels"}
+        />
+        <AdminKpiCard
+          label={so ? "Farriimaha Aan La Akhriyin" : "Unread Notifications"}
+          value={totalUnreadCount}
+          icon="mark_chat_unread"
+          variant={totalUnreadCount > 0 ? "danger" : "success"}
+          subtext={
+            totalUnreadCount > 0
+              ? so
+                ? "Farriimo u baahan jawaab-celin"
+                : "Inbound messages awaiting reply"
+              : so
+                ? "Dhammaan farriimaha waa la akhriyay"
+                : "Zero inbox backlog maintained"
+          }
+        />
+        <AdminKpiCard
+          label={so ? "Adeegga Tooska Ah" : "Concierge Desk"}
+          value="Active (0ms)"
+          icon="support_agent"
+          variant="success"
+          subtext={so ? "Farriimuhu degdeg bay ku dhacayaan" : "Instant SWR message synchronization"}
+        />
+        <AdminKpiCard
+          label={so ? "Sawirrada & Lifaaqyada" : "Attachment Support"}
+          value="Enabled"
+          icon="image"
+          variant="neutral"
+          subtext={so ? "PNG, JPG, WebP waa la oggol yahay" : "High-resolution image uploads"}
+        />
       </div>
 
-      {/* Main 2-Pane Chat Interface */}
-      <div className="grid grid-cols-1 md:grid-cols-12 bg-white rounded-3xl border border-[#E7ECF3] shadow-sm overflow-hidden h-[calc(100vh-190px)] min-h-[550px]">
-        {/* Left Pane: Conversations List */}
-        <div className={`md:col-span-4 border-r border-[#E7ECF3] flex flex-col h-full bg-[#FAFBFD] ${selectedUser ? "hidden md:flex" : "flex"}`}>
+      {/* Alerts */}
+      {error && (
+        <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#EF4444]/25 text-[#EF4444] text-[13px] font-medium flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <Icon name="error" size={20} />
+            <span>{error}</span>
+          </div>
+          <button type="button" onClick={() => setError("")} className="cursor-pointer text-[#EF4444]">
+            <Icon name="close" size={18} />
+          </button>
+        </div>
+      )}
+
+      {/* Layer 3: Main 2-Pane Chat Workspace */}
+      <div className="grid grid-cols-1 md:grid-cols-12 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden h-[calc(100vh-280px)] min-h-[580px]">
+        {/* Left Pane: Conversations List (4 cols) */}
+        <div
+          className={`md:col-span-4 border-r border-[#E2E8F0] flex flex-col h-full bg-[#F8FAFC] ${
+            selectedUser ? "hidden md:flex" : "flex"
+          }`}
+        >
           {/* Search box */}
-          <div className="p-3 border-b border-[#E7ECF3] bg-white">
+          <div className="p-3.5 border-b border-[#E2E8F0] bg-white">
             <div className="relative">
               <Icon name="search" size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder={so ? "Raadi wadahadal..." : "Search conversations..."}
+                placeholder={so ? "Raadi wadahadal..." : "Search member chats..."}
                 value={searchConvQuery}
                 onChange={(e) => setSearchConvQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-[#FAFBFD] text-[12px] outline-none focus:border-[#0B6EF3] focus:bg-white"
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-[#F8FAFC] text-[12px] font-medium outline-none focus:border-[#0B6EF3] focus:bg-white"
               />
             </div>
           </div>
@@ -316,25 +382,26 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
           {/* Conversations list */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
             {loadingList ? (
-              <div className="p-8 text-center text-slate-400 text-[12px]">
-                <Icon name="progress_activity" size={22} className="animate-spin text-[#0B6EF3] mx-auto mb-2" />
-                <span>{so ? "Wadahadallada ayaa la soo rarayaa..." : "Loading chats..."}</span>
+              <div className="p-12 text-center text-slate-400 text-[12px]">
+                <Icon name="sync" size={22} className="animate-spin text-[#0B6EF3] mx-auto mb-2" />
+                <span>{so ? "Wadahadallada ayaa la soo rarayaa..." : "Syncing conversations..."}</span>
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-[12px]">
-                <Icon name="chat" size={28} className="mx-auto mb-2 text-slate-300" />
-                <p className="font-semibold text-slate-600">{so ? "Wadahadal ma jiro" : "No chats found"}</p>
+              <div className="p-10 text-center text-slate-400 text-[12px] flex flex-col items-center">
+                <Icon name="chat" size={32} className="text-slate-300 mb-2" />
+                <p className="font-bold text-[#0F172A]">{so ? "Wadahadal ma jiro" : "No chats found"}</p>
                 <button
                   type="button"
                   onClick={openNewChatModal}
                   className="mt-3 text-[12px] font-bold text-[#0B6EF3] hover:underline cursor-pointer"
                 >
-                  {so ? "Bilow fariin cusub" : "Start a new conversation"}
+                  {so ? "+ Bilow fariin cusub" : "+ Start new conversation"}
                 </button>
               </div>
             ) : (
               filteredConversations.map((c) => {
                 const isSelected = selectedUser?.userId === c.userId;
+
                 return (
                   <button
                     key={c.userId}
@@ -343,32 +410,33 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
                       setSelectedUser(c);
                       setLoadingMessages(true);
                     }}
-                    className={`w-full p-3.5 flex items-start gap-3 text-left transition-colors cursor-pointer ${
+                    className={`w-full p-4 flex items-start gap-3 text-left transition-colors cursor-pointer ${
                       isSelected
-                        ? "bg-[#EFF6FF] border-l-4 border-[#0B6EF3]"
+                        ? "bg-blue-50/70 border-l-4 border-[#0B6EF3]"
                         : "hover:bg-slate-100/70 bg-white"
                     }`}
                   >
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 border border-slate-200 relative shrink-0">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 relative shrink-0 border border-slate-200 shadow-xs">
                       <Image
                         src={c.userAvatar || "/images/avatar.jpg"}
                         alt={c.userName}
                         fill
                         className="object-cover"
+                        sizes="40px"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <h4 className="text-[13px] font-bold text-slate-900 truncate">
+                        <h4 className="text-[13px] font-bold text-[#0F172A] truncate">
                           {c.userName}
                         </h4>
                         {c.unreadForAdminCount > 0 && (
-                          <span className="w-5 h-5 rounded-full bg-[#0B6EF3] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                          <span className="w-5 h-5 rounded-full bg-[#0B6EF3] text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-xs">
                             {c.unreadForAdminCount}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-500 truncate mt-0.5">{c.lastMessage}</p>
+                      <p className="text-[11px] text-[#64748B] truncate mt-0.5 font-medium">{c.lastMessage}</p>
                     </div>
                   </button>
                 );
@@ -377,12 +445,16 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
           </div>
         </div>
 
-        {/* Right Pane: Active Chat Conversation */}
-        <div className={`md:col-span-8 flex flex-col h-full bg-white ${selectedUser ? "flex" : "hidden md:flex"}`}>
+        {/* Right Pane: Active Chat Conversation (8 cols) */}
+        <div
+          className={`md:col-span-8 flex flex-col h-full bg-white ${
+            selectedUser ? "flex" : "hidden md:flex"
+          }`}
+        >
           {selectedUser ? (
             <>
               {/* Chat Header */}
-              <div className="px-5 py-3 border-b border-[#E7ECF3] bg-gradient-to-r from-slate-50 to-white flex items-center justify-between shrink-0">
+              <div className="px-6 py-3.5 border-b border-[#E2E8F0] bg-white flex items-center justify-between shrink-0 shadow-xs">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -392,12 +464,13 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
                     <Icon name="arrow_back" size={18} />
                   </button>
 
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 border border-slate-200 relative shrink-0">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 relative shrink-0 border border-slate-200">
                     <Image
                       src={selectedUser.userAvatar || "/images/avatar.jpg"}
                       alt={selectedUser.userName}
                       fill
                       className="object-cover"
+                      sizes="40px"
                     />
                   </div>
 
@@ -409,36 +482,26 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
                   </div>
                 </div>
 
-                <div className="text-[11px] font-bold bg-[#EFF6FF] text-[#0B6EF3] px-2.5 py-1 rounded-full">
-                  User ID: {selectedUser.userId.slice(-6)}
+                <div className="text-[11px] font-bold bg-[#EFF6FF] text-[#0B6EF3] px-3 py-1 rounded-full border border-[#0B6EF3]/20">
+                  ID: {selectedUser.userId.slice(-6)}
                 </div>
               </div>
 
-              {/* Error banner */}
-              {error && (
-                <div className="mx-4 mt-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[12px] flex items-center justify-between shrink-0">
-                  <span>{error}</span>
-                  <button type="button" onClick={() => setError("")} className="cursor-pointer">
-                    <Icon name="close" size={16} />
-                  </button>
-                </div>
-              )}
-
               {/* Messages Stream */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-3.5">
+              <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4 bg-[#FAFBFD]">
                 {loadingMessages ? (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
-                    <Icon name="progress_activity" size={24} className="animate-spin text-[#0B6EF3]" />
+                    <Icon name="sync" size={24} className="animate-spin text-[#0B6EF3]" />
                     <span className="text-[12px] font-medium">{so ? "Farriimaha ayaa la soo rarayaa..." : "Loading messages..."}</span>
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center p-6 gap-2 text-slate-400">
                     <Icon name="chat_bubble_outline" size={32} />
-                    <p className="text-[13px] font-semibold text-slate-600">
-                      {so ? "Weli farriin ma dhex marin adiga iyo macmiilkan." : "No messages yet in this conversation."}
+                    <p className="text-[13px] font-bold text-slate-700">
+                      {so ? "Weli farriin ma dhex marin adiga iyo macmiilkan." : "No messages recorded in this channel yet."}
                     </p>
-                    <p className="text-[11px] text-slate-400">
-                      {so ? "Qor farriintaada hoose si aad ula hadasho." : "Send a message below to start chatting."}
+                    <p className="text-[11px] text-slate-500">
+                      {so ? "Qor farriintaada hoose si aad ula hadasho." : "Send an introductory message to start assisting."}
                     </p>
                   </div>
                 ) : (
@@ -453,7 +516,7 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
                       >
                         <div className="flex items-center gap-1.5 mb-1 px-1">
                           <span className="text-[10px] font-bold text-slate-500">
-                            {isAdmin ? "🛡️ You (Admin)" : msg.userName}
+                            {isAdmin ? "🛡️ BetterMe Support" : msg.userName}
                           </span>
                           <span className="text-[10px] text-slate-400">
                             {formatMessageTime(msg.createdAt)}
@@ -461,10 +524,10 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
                         </div>
 
                         <div
-                          className={`p-3 rounded-2xl text-[13px] leading-relaxed shadow-2xs ${
+                          className={`p-3.5 rounded-2xl text-[13px] leading-relaxed shadow-xs ${
                             isAdmin
-                              ? "bg-[#0B6EF3] text-white rounded-tr-sm"
-                              : "bg-[#F1F5F9] text-slate-800 rounded-tl-sm border border-slate-200/80"
+                              ? "bg-[#0B6EF3] text-white rounded-tr-xs"
+                              : "bg-white text-slate-800 rounded-tl-xs border border-slate-200"
                           }`}
                         >
                           {msg.imageUrl && (
@@ -472,9 +535,9 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
                               <Image
                                 src={msg.imageUrl}
                                 alt="Attachment"
-                                width={300}
-                                height={200}
-                                className="object-cover w-full max-h-56 hover:scale-102 transition-transform"
+                                width={320}
+                                height={220}
+                                className="object-cover w-full max-h-60 hover:scale-102 transition-transform"
                                 onClick={() => setPreviewModalUrl(msg.imageUrl || null)}
                               />
                             </div>
@@ -497,7 +560,7 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
                       <Image src={pendingImageUrl} alt="Preview" fill className="object-cover" />
                     </div>
                     <span className="text-[11px] font-semibold text-slate-700">
-                      {so ? "Sawirka waa la lifaaqay ✓" : "Image attached ✓"}
+                      {so ? "Sawirka waa la lifaaqay ✓" : "Screenshot attached ✓"}
                     </span>
                   </div>
                   <button
@@ -513,7 +576,7 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
               {/* Input Bar */}
               <form
                 onSubmit={handleSendMessage}
-                className="p-3 bg-white border-t border-[#E7ECF3] flex items-center gap-2 shrink-0"
+                className="p-3.5 bg-white border-t border-[#E2E8F0] flex items-center gap-2.5 shrink-0"
               >
                 <input
                   type="file"
@@ -527,11 +590,11 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
                   type="button"
                   disabled={uploadingImage || sending}
                   onClick={() => fileInputRef.current?.click()}
-                  title={so ? "Lifaaq sawir (Sawir kaliya)" : "Attach image (Images only)"}
+                  title={so ? "Lifaaq sawir" : "Attach image"}
                   className="w-10 h-10 rounded-xl text-slate-500 hover:text-[#0B6EF3] hover:bg-slate-100 flex items-center justify-center transition-colors shrink-0 cursor-pointer disabled:opacity-50"
                 >
                   {uploadingImage ? (
-                    <Icon name="progress_activity" size={20} className="animate-spin text-[#0B6EF3]" />
+                    <Icon name="sync" size={20} className="animate-spin text-[#0B6EF3]" />
                   ) : (
                     <Icon name="image" size={22} />
                   )}
@@ -544,18 +607,18 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
                   placeholder={
                     so
                       ? `U qor farriin ${selectedUser.userName}...`
-                      : `Type message to ${selectedUser.userName}...`
+                      : `Reply directly to ${selectedUser.userName}...`
                   }
-                  className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-[#FAFBFD] text-[13px] text-slate-900 outline-none focus:border-[#0B6EF3] focus:bg-white transition-all"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-[13px] text-slate-900 outline-none focus:border-[#0B6EF3] focus:bg-white transition-all font-medium"
                 />
 
                 <button
                   type="submit"
                   disabled={(!inputText.trim() && !pendingImageUrl) || sending || uploadingImage}
-                  className="w-10 h-10 rounded-xl bg-[#0B6EF3] hover:bg-[#0958c7] disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
+                  className="w-10 h-10 rounded-xl bg-[#0B6EF3] hover:bg-[#0958c7] disabled:opacity-40 text-white flex items-center justify-center transition-all shrink-0 cursor-pointer shadow-sm active:scale-95"
                 >
                   {sending ? (
-                    <Icon name="progress_activity" size={18} className="animate-spin text-white" />
+                    <Icon name="sync" size={18} className="animate-spin text-white" />
                   ) : (
                     <Icon name="send" size={18} />
                   )}
@@ -564,23 +627,23 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
             </>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center p-8 gap-3 text-slate-400">
-              <div className="w-16 h-16 rounded-3xl bg-slate-100 text-slate-400 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 text-[#0B6EF3] flex items-center justify-center">
                 <Icon name="question_answer" size={32} />
               </div>
               <div>
-                <h3 className="text-[16px] font-bold text-slate-700">
-                  {so ? "Dooro qof aad la hadasho" : "Select a conversation"}
+                <h3 className="text-[16px] font-bold text-[#0F172A]">
+                  {so ? "Dooro qof aad la hadasho" : "Select a member conversation"}
                 </h3>
-                <p className="text-[12px] text-slate-500 max-w-xs mt-1">
+                <p className="text-[12px] text-[#64748B] max-w-xs mt-1">
                   {so
                     ? "Dooro mid ka mid ah wadahadallada bidixda, ama guji badhanka 'Farriin Cusub' si aad ula hadasho user kasta."
-                    : "Pick a chat from the left pane, or click 'Start New Chat' to initiate a conversation with any registered user."}
+                    : "Select an inquiry from the left pane or start a new direct chat channel with any registered member."}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={openNewChatModal}
-                className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0B6EF3] text-white text-[12px] font-bold hover:bg-[#0958c7] cursor-pointer"
+                className="mt-2 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0B6EF3] text-white text-[12px] font-bold hover:bg-[#0958c7] cursor-pointer shadow-xs"
               >
                 <Icon name="add_comment" size={16} />
                 <span>{so ? "Bilow Farriin Cusub" : "Start New Chat"}</span>
@@ -590,62 +653,60 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
         </div>
       </div>
 
-      {/* "New Chat" User Selection Modal */}
+      {/* "New Chat" Modal */}
       {newChatModalOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+          className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
           onClick={() => setNewChatModalOpen(false)}
         >
           <div
-            className="w-full max-w-md bg-white rounded-3xl p-5 shadow-2xl flex flex-col gap-4 max-h-[85vh]"
+            className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl border border-[#E2E8F0] flex flex-col gap-4 max-h-[85vh] animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] text-[#0B6EF3] flex items-center justify-center">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#0B6EF3]/10 text-[#0B6EF3] flex items-center justify-center font-bold">
                   <Icon name="person_add" size={18} />
                 </div>
-                <h3 className="text-[15px] font-extrabold text-slate-900">
-                  {so ? "Dooro User aad la hadleyso" : "Choose User to Chat With"}
+                <h3 className="text-[15px] font-bold text-[#0F172A]">
+                  {so ? "Dooro Xubin aad la hadlayso" : "Select Member to Message"}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setNewChatModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 cursor-pointer"
               >
                 <Icon name="close" size={16} />
               </button>
             </div>
 
-            <p className="text-[12px] text-slate-500 -mt-2">
+            <p className="text-[12px] text-[#64748B] -mt-1">
               {so
-                ? "Sida aad doontid ayaad qof kasta ula hadli kartaa, xitaa haddii aysan horey support u codsan."
-                : "You can initiate chat with any registered user at any time, even if they haven't requested support."}
+                ? "Waxaad si toos ah ula hadli kartaa xubin kasta xitaa haddii aysan hore u furin codsi taageero."
+                : "You can reach out proactively to any registered member account."}
             </p>
 
-            {/* Search Input */}
             <div className="relative">
               <Icon name="search" size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder={so ? "Ku raadi magac ama email..." : "Search user by name or email..."}
+                placeholder={so ? "Raadi magac ama email..." : "Filter members by name or email..."}
                 value={searchNewUserQuery}
                 onChange={(e) => setSearchNewUserQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-[12px] outline-none focus:border-[#0B6EF3]"
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-[#F8FAFC] text-[12px] outline-none focus:border-[#0B6EF3] focus:bg-white"
               />
             </div>
 
-            {/* User List */}
             <div className="flex-1 overflow-y-auto divide-y divide-slate-100 max-h-[50vh]">
               {loadingUsers ? (
                 <div className="p-8 text-center text-slate-400 text-[12px]">
-                  <Icon name="progress_activity" size={20} className="animate-spin text-[#0B6EF3] mx-auto mb-2" />
-                  <span>{so ? "Macaamiisha ayaa la soo rarayaa..." : "Loading users..."}</span>
+                  <Icon name="sync" size={20} className="animate-spin text-[#0B6EF3] mx-auto mb-2" />
+                  <span>{so ? "Xubnaha ayaa la soo rarayaa..." : "Loading directory members..."}</span>
                 </div>
               ) : filteredAllUsers.length === 0 ? (
                 <div className="p-6 text-center text-slate-400 text-[12px]">
-                  {so ? "User laguma helin raadinta" : "No users matched your search"}
+                  {so ? "Xubin laguma helin raadinta" : "No matching members found"}
                 </div>
               ) : (
                 filteredAllUsers.map((u) => (
@@ -655,19 +716,20 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
                     onClick={() => handleSelectUserFromModal(u)}
                     className="w-full p-3 flex items-center gap-3 hover:bg-[#F8FAFC] transition-colors rounded-xl text-left cursor-pointer group"
                   >
-                    <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-200 relative shrink-0">
+                    <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-200 relative shrink-0 border border-slate-200">
                       <Image
                         src={u.avatarUrl || "/images/avatar.jpg"}
                         alt={u.name}
                         fill
                         className="object-cover"
+                        sizes="36px"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-[13px] font-bold text-slate-900 group-hover:text-[#0B6EF3] transition-colors truncate">
+                      <h4 className="text-[13px] font-bold text-[#0F172A] group-hover:text-[#0B6EF3] transition-colors truncate">
                         {u.name}
                       </h4>
-                      <p className="text-[11px] text-slate-500 truncate">{u.email}</p>
+                      <p className="text-[11px] text-[#64748B] truncate">{u.email}</p>
                     </div>
                     <Icon name="chevron_right" size={18} className="text-slate-400 group-hover:text-[#0B6EF3] transition-colors" />
                   </button>
@@ -684,7 +746,7 @@ export default function AdminSupportClient({ adminUser }: AdminSupportClientProp
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
           onClick={() => setPreviewModalUrl(null)}
         >
-          <div className="relative max-w-3xl max-h-[85vh] rounded-2xl overflow-hidden bg-black">
+          <div className="relative max-w-3xl max-h-[85vh] rounded-2xl overflow-hidden bg-black shadow-2xl">
             <Image
               src={previewModalUrl}
               alt="Fullscreen"

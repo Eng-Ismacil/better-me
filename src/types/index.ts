@@ -46,7 +46,7 @@ export interface AuditLog {
 export interface FinanceTransaction {
   _id?: string;
   userId: string;
-  type: "income" | "expense";
+  type: "income" | "expense" | "saving";
   amount: number;
   currency: string;
   category: string;

@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { Routine, Habit } from "@/types";
 import { useTranslation } from "@/lib/i18n";
 
+import { useUserRoutines } from "@/hooks/useUserRoutines";
+
 interface RoutinesClientProps {
   routines: Routine[];
   habits: Habit[];
@@ -52,27 +54,35 @@ const emptyForm: RoutineFormData = {
   habitIds: [],
 };
 
-export default function RoutinesClient({ routines, habits }: RoutinesClientProps) {
-  const router = useRouter();
+export default function RoutinesClient({ routines: initialRoutines, habits }: RoutinesClientProps) {
   const { language } = useTranslation();
-  const [expanded, setExpanded] = useState<string | null>(routines[0]?._id || null);
+
+  // TanStack React Query 0ms Optimistic Hook
+  const {
+    routines,
+    createRoutine,
+    updateRoutine,
+    deleteRoutine: removeRoutine,
+    isCreating,
+    isUpdating,
+    isDeleting,
+  } = useUserRoutines({ initialRoutines });
+
+  const [expanded, setExpanded] = useState<string | null>(initialRoutines[0]?._id || null);
   const [addingRoutineName, setAddingRoutineName] = useState<string | null>(null);
 
   // Create modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState<RoutineFormData>(emptyForm);
-  const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
   // Edit modal state
   const [editRoutine, setEditRoutine] = useState<Routine | null>(null);
   const [editForm, setEditForm] = useState<RoutineFormData>(emptyForm);
-  const [editing, setEditing] = useState(false);
   const [editError, setEditError] = useState("");
 
   // Delete modal state
   const [deleteRoutine, setDeleteRoutine] = useState<Routine | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   const habitMap = new Map(habits.map((h) => [h._id, h]));
 
@@ -84,19 +94,13 @@ export default function RoutinesClient({ routines, habits }: RoutinesClientProps
   }) => {
     setAddingRoutineName(s.name);
     try {
-      const res = await fetch("/api/routines", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: s.name,
-          description: s.desc,
-          icon: s.icon,
-          timeOfDay: s.timeOfDay,
-          habitIds: habits.slice(0, 3).map((h) => h._id),
-        }),
+      await createRoutine({
+        name: s.name,
+        description: s.desc,
+        icon: s.icon,
+        timeOfDay: s.timeOfDay,
+        habitIds: habits.slice(0, 3).map((h) => h._id || "").filter(Boolean),
       });
-      if (!res.ok) throw new Error("Failed to add routine");
-      router.refresh();
     } catch (e) {
       console.error(e);
     } finally {
@@ -107,31 +111,19 @@ export default function RoutinesClient({ routines, habits }: RoutinesClientProps
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createForm.name.trim()) { setCreateError("Routine name is required"); return; }
-    setCreating(true);
     setCreateError("");
     try {
-      const res = await fetch("/api/routines", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: createForm.name.trim(),
-          description: createForm.description.trim(),
-          icon: createForm.icon,
-          timeOfDay: createForm.timeOfDay,
-          habitIds: createForm.habitIds,
-        }),
+      await createRoutine({
+        name: createForm.name.trim(),
+        description: createForm.description.trim(),
+        icon: createForm.icon,
+        timeOfDay: createForm.timeOfDay,
+        habitIds: createForm.habitIds,
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create routine");
-      }
       setShowCreateModal(false);
       setCreateForm(emptyForm);
-      router.refresh();
     } catch (err: unknown) {
       setCreateError((err as Error).message);
-    } finally {
-      setCreating(false);
     }
   };
 
@@ -150,45 +142,31 @@ export default function RoutinesClient({ routines, habits }: RoutinesClientProps
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editRoutine || !editForm.name.trim()) { setEditError("Routine name is required"); return; }
-    setEditing(true);
     setEditError("");
     try {
-      const res = await fetch(`/api/routines/${editRoutine._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await updateRoutine({
+        id: editRoutine._id || "",
+        payload: {
           name: editForm.name.trim(),
           description: editForm.description.trim(),
           icon: editForm.icon,
           timeOfDay: editForm.timeOfDay,
           habitIds: editForm.habitIds,
-        }),
+        },
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to update routine");
-      }
       setEditRoutine(null);
-      router.refresh();
     } catch (err: unknown) {
       setEditError((err as Error).message);
-    } finally {
-      setEditing(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!deleteRoutine) return;
-    setDeleting(true);
+    if (!deleteRoutine || !deleteRoutine._id) return;
     try {
-      const res = await fetch(`/api/routines/${deleteRoutine._id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete routine");
+      await removeRoutine(deleteRoutine._id);
       setDeleteRoutine(null);
-      router.refresh();
     } catch (err) {
       console.error(err);
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -206,45 +184,76 @@ export default function RoutinesClient({ routines, habits }: RoutinesClientProps
   };
 
   return (
-    <div className="flex flex-col gap-5 select-none">
-      {/* Header */}
-      <section className="bg-white rounded-2xl border border-[#E5E7EB] p-5 shadow-[0_2px_12px_rgba(16,24,40,0.04)] relative overflow-hidden">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[12px] font-semibold uppercase tracking-wider text-[#667085]">Your Routines</p>
-            <h2 className="text-[22px] font-bold text-[#101010] mt-0.5">{routines.length} Active</h2>
-            <p className="text-[13px] text-[#667085] mt-0.5">Structured sequences for daily flow</p>
+    <div className="flex flex-col gap-6 select-none max-w-5xl mx-auto w-full pb-24 md:pb-12">
+      {/* Modern Executive Header */}
+      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-[#E7ECF3] dark:border-slate-800 p-6 shadow-xs relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0B6EF3]/15 to-[#0B6EF3]/5 border border-[#0B6EF3]/20 flex items-center justify-center text-[#0B6EF3] shrink-0">
+            <Icon name="auto_stories" size={28} />
           </div>
-          <button
-            type="button"
-            onClick={() => { setShowCreateModal(true); setCreateForm(emptyForm); setCreateError(""); }}
-            className="w-12 h-12 rounded-full bg-[#0B6EF3] flex items-center justify-center shadow-md hover:bg-[#0958c7] active:scale-95 transition-all"
-          >
-            <Icon name="add" size={24} className="text-white" />
-          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085] dark:text-slate-400">
+                {language === "so" ? "Hab-socodkaaga Maalinlaha" : "Daily Flow Systems"}
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#0B6EF3]/10 text-[#0B6EF3]">
+                {routines.length} {language === "so" ? "Firfircoon" : "Active"}
+              </span>
+            </div>
+            <h2 className="text-[22px] font-black text-[#111827] dark:text-white mt-0.5 font-[family-name:var(--font-headline)]">
+              {language === "so" ? "Hab-socodyada & Rutiinada" : "Structured Routines"}
+            </h2>
+            <p className="text-[13px] text-[#667085] dark:text-slate-400 mt-0.5">
+              {language === "so"
+                ? "Isku xir caadooyinkaaga si aad u hesho tamar iyo nidaam maalinle ah oo joogto ah."
+                : "Chain complementary habits together to build effortless, compounding momentum."}
+            </p>
+          </div>
         </div>
-        <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-[#ECFDF3]/60 blur-2xl pointer-events-none" />
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowCreateModal(true);
+            setCreateForm(emptyForm);
+            setCreateError("");
+          }}
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#0B6EF3] hover:bg-[#095cd4] text-white text-[13px] font-bold shadow-xs hover:shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
+        >
+          <Icon name="add" size={18} />
+          <span>{language === "so" ? "Samee Rutiin Cusub" : "Create Routine"}</span>
+        </button>
       </section>
 
       {/* Routines List */}
       {routines.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-10 flex flex-col items-center text-center">
-          <Icon name="auto_stories" size={40} className="text-[#22C55E] mb-3" />
-          <h3 className="text-[16px] font-bold text-[#101010]">No routines yet</h3>
-          <p className="text-[13px] text-[#667085] mt-1 max-w-xs">
-            Group your habits into structured routines for powerful daily momentum.
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-[#E7ECF3] dark:border-slate-800 p-12 flex flex-col items-center text-center">
+          <div className="w-14 h-14 rounded-2xl bg-[#0B6EF3]/10 text-[#0B6EF3] flex items-center justify-center mb-3">
+            <Icon name="auto_stories" size={28} />
+          </div>
+          <h3 className="text-[17px] font-black text-[#111827] dark:text-white">
+            {language === "so" ? "Weli rutiin ma haysatid" : "No routines configured yet"}
+          </h3>
+          <p className="text-[13px] text-[#667085] dark:text-slate-400 mt-1 max-w-sm mx-auto">
+            {language === "so"
+              ? "Isku gee caadooyinkaaga (sida Subax, Galab, ama Habeen) si aad si sahlan ugu qabato."
+              : "Group your habits into structured sequences to master your morning and evening flow."}
           </p>
           <button
             type="button"
-            onClick={() => { setShowCreateModal(true); setCreateForm(emptyForm); setCreateError(""); }}
-            className="mt-5 px-5 py-2.5 bg-[#22C55E] text-white rounded-full text-[13px] font-semibold flex items-center gap-1.5"
+            onClick={() => {
+              setShowCreateModal(true);
+              setCreateForm(emptyForm);
+              setCreateError("");
+            }}
+            className="mt-5 px-5 py-2.5 bg-[#0B6EF3] text-white rounded-xl text-[13px] font-bold flex items-center gap-2 hover:bg-[#095cd4] cursor-pointer shadow-xs"
           >
             <Icon name="add" size={16} />
-            Create First Routine
+            {language === "so" ? "Abuur Rutiinkaaga Koowaad" : "Build Your First Routine"}
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3.5">
           {routines.map((routine) => {
             const isExpanded = expanded === routine._id;
             const routineHabits = (routine.habits || [])
@@ -252,74 +261,109 @@ export default function RoutinesClient({ routines, habits }: RoutinesClientProps
               .map((rh) => habitMap.get(rh.habitId))
               .filter(Boolean) as Habit[];
 
-            const timeLabel = routine.timeOfDay?.toLowerCase().includes("am") ? "Morning" :
-              routine.timeOfDay?.toLowerCase().includes("pm") ? "Evening" : "Morning";
+            const timeLabel = routine.timeOfDay?.toLowerCase().includes("am")
+              ? "Morning"
+              : routine.timeOfDay?.toLowerCase().includes("pm")
+              ? "Evening"
+              : routine.timeOfDay || "Morning";
 
             return (
               <div
                 key={routine._id}
-                className="bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden shadow-[0_2px_8px_rgba(16,24,40,0.03)]"
+                className="bg-white dark:bg-slate-900 rounded-3xl border border-[#E7ECF3] dark:border-slate-800 overflow-hidden shadow-xs hover:border-[#CBD5E1] transition-all"
               >
                 {/* Routine Header */}
-                <div className="flex items-center gap-2 px-3 pt-3">
+                <div className="flex items-center gap-3 p-4 sm:p-5">
                   <button
                     type="button"
                     onClick={() => setExpanded(isExpanded ? null : routine._id || null)}
-                    className="flex-1 flex items-center gap-4 p-2 hover:bg-[#f6f3f2] rounded-xl transition-colors"
+                    className="flex-1 flex items-center gap-4 text-left cursor-pointer min-w-0"
                   >
-                    <div className="w-12 h-12 rounded-full bg-[#EFF6FF] flex items-center justify-center shrink-0">
-                      <Icon name={routine.icon || "auto_stories"} size={24} className="text-[#007AFF]" />
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0B6EF3]/15 to-[#0B6EF3]/5 border border-[#0B6EF3]/20 flex items-center justify-center text-[#0B6EF3] shrink-0">
+                      <Icon name={routine.icon || "auto_stories"} size={24} />
                     </div>
-                    <div className="flex-1 text-left min-w-0">
-                      <p className="text-[15px] font-bold text-[#101010] truncate">{routine.name}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <Icon name={TIME_ICONS[timeLabel] || "schedule"} size={12} className="text-[#667085]" />
-                        <span className="text-[12px] text-[#667085]">{routine.timeOfDay} · {routineHabits.length} habits</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[16px] font-black text-[#111827] dark:text-white truncate">
+                          {routine.name}
+                        </p>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          {routineHabits.length} {language === "so" ? "tallaabo" : "steps"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="inline-flex items-center gap-1 text-[12px] font-bold text-[#667085] dark:text-slate-400">
+                          <Icon name={TIME_ICONS[timeLabel] || "schedule"} size={14} className="text-[#0B6EF3]" />
+                          {routine.timeOfDay}
+                        </span>
+                        {routine.description && (
+                          <>
+                            <span className="text-slate-300 dark:text-slate-700">•</span>
+                            <span className="text-[12px] text-[#667085] dark:text-slate-400 truncate max-w-xs">
+                              {routine.description}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <Icon name={isExpanded ? "expand_less" : "expand_more"} size={20} className="text-[#667085] shrink-0" />
+                    <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 shrink-0">
+                      <Icon name={isExpanded ? "expand_less" : "expand_more"} size={20} />
+                    </div>
                   </button>
-                  {/* Edit / Delete action buttons */}
-                  <button
-                    type="button"
-                    title="Edit routine"
-                    onClick={() => openEdit(routine)}
-                    className="w-8 h-8 rounded-full bg-[#F4F8FF] border border-[#0B6EF3]/20 text-[#0B6EF3] flex items-center justify-center hover:bg-[#0B6EF3] hover:text-white transition-all"
-                  >
-                    <Icon name="edit" size={15} />
-                  </button>
-                  <button
-                    type="button"
-                    title="Delete routine"
-                    onClick={() => setDeleteRoutine(routine)}
-                    className="w-8 h-8 rounded-full bg-[#FFF1F0] border border-[#FFD6D3] text-[#EF4444] flex items-center justify-center hover:bg-[#EF4444] hover:text-white transition-all"
-                  >
-                    <Icon name="delete" size={15} />
-                  </button>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-[#F2F4F7] dark:border-slate-800">
+                    <button
+                      type="button"
+                      title="Edit routine"
+                      onClick={() => openEdit(routine)}
+                      className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-[#F4F8FF] hover:text-[#0B6EF3] text-[#667085] flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      <Icon name="edit" size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Delete routine"
+                      onClick={() => setDeleteRoutine(routine)}
+                      className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-[#FEF2F2] hover:text-[#EF4444] text-[#667085] flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      <Icon name="delete" size={16} />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Expanded Habits */}
+                {/* Expanded Habits Flow */}
                 {isExpanded && (
-                  <div className="px-5 pb-5 flex flex-col gap-2 border-t border-[#f0edec] mt-3">
-                    <p className="text-[12px] text-[#667085] pt-3 pb-1">{routine.description}</p>
+                  <div className="px-5 pb-5 pt-2 border-t border-[#F2F4F7] dark:border-slate-800 flex flex-col gap-2.5 bg-slate-50/50 dark:bg-slate-900/50">
                     {routineHabits.length === 0 ? (
-                      <p className="text-[13px] text-[#667085] text-center py-4">No habits in this routine</p>
+                      <div className="p-6 text-center text-[13px] text-[#667085] dark:text-slate-400">
+                        {language === "so"
+                          ? "Rutiinkan weli wax caadooyin ah kuma jiraan. Riix 'Tafatir' si aad caadooyin ugu darto."
+                          : "No habits linked to this routine yet. Click 'Edit' to attach habits."}
+                      </div>
                     ) : (
                       routineHabits.map((habit, index) => (
-                        <div key={habit._id} className="flex items-center gap-3 p-3 bg-[#f6f3f2] rounded-xl">
-                          <div className="w-6 h-6 rounded-full bg-[#007AFF] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                        <div
+                          key={habit._id}
+                          className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800/80 rounded-2xl border border-[#E7ECF3] dark:border-slate-700/60 shadow-2xs"
+                        >
+                          <div className="w-7 h-7 rounded-xl bg-[#0B6EF3]/10 text-[#0B6EF3] text-[12px] font-black flex items-center justify-center shrink-0">
                             {index + 1}
                           </div>
-                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-                            <Icon name={habit.icon} size={16} className="text-[#007AFF]" />
+                          <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[#111827] dark:text-white shrink-0">
+                            <Icon name={habit.icon || "check_circle"} size={18} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-semibold text-[#101010] truncate">{habit.name}</p>
-                            <p className="text-[11px] text-[#667085]">{habit.difficulty} · {habit.preferredTime}</p>
+                            <p className="text-[13px] font-bold text-[#111827] dark:text-white truncate">
+                              {habit.name}
+                            </p>
+                            <p className="text-[11px] text-[#667085] dark:text-slate-400 capitalize">
+                              {habit.category} · {habit.target} {habit.targetUnit || "times"}
+                            </p>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Icon name="local_fire_department" size={13} className="text-[#EF4444]" />
-                            <span className="text-[12px] font-bold text-[#667085]">{habit.currentStreak}d</span>
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 text-[#EF4444] text-[11px] font-bold">
+                            <Icon name="local_fire_department" size={14} />
+                            <span>{habit.currentStreak || 0}d</span>
                           </div>
                         </div>
                       ))
@@ -327,10 +371,10 @@ export default function RoutinesClient({ routines, habits }: RoutinesClientProps
 
                     <Link
                       href="/home"
-                      className="mt-2 w-full h-11 bg-[#007AFF] text-white rounded-full text-[13px] font-semibold flex items-center justify-center gap-1.5 hover:bg-[#0070eb] transition-all"
+                      className="mt-2 w-full h-11 bg-[#0B6EF3] hover:bg-[#095cd4] text-white rounded-2xl text-[13px] font-black flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
                     >
-                      <Icon name="play_circle" size={16} />
-                      Start Routine
+                      <Icon name="play_circle" size={18} />
+                      <span>{language === "so" ? "Bilow Rutiinka Hadda" : "Start Routine Now"}</span>
                     </Link>
                   </div>
                 )}
@@ -340,42 +384,83 @@ export default function RoutinesClient({ routines, habits }: RoutinesClientProps
         </div>
       )}
 
-      {/* Suggested Routines */}
-      <section className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex flex-col gap-3">
-        <h3 className="text-[15px] font-bold text-[#101010]">Suggested Routines</h3>
-        {[
-          { name: "Power Morning", icon: "wb_sunny", desc: "Hydration, meditation, exercise", timeOfDay: "Morning", color: "#F59E0B", bg: "#FFF7ED" },
-          { name: "Evening Wind Down", icon: "nightlight_round", desc: "Journal, reading, sleep prep", timeOfDay: "Evening", color: "#0B6EF3", bg: "#F4F8FF" },
-          { name: "Deep Work Block", icon: "laptop_chromebook", desc: "Focus timer + review session", timeOfDay: "Afternoon", color: "#20C773", bg: "#ECFDF3" },
-        ].map((s) => (
-          <div key={s.name} className="flex items-center gap-3 p-3.5 bg-[#FAFBFD] rounded-[14px] border border-[#E7ECF3]">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs" style={{ background: s.bg }}>
-              <Icon name={s.icon} size={20} style={{ color: s.color }} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold text-[#111827]">{s.name}</p>
-              <p className="text-[11px] text-[#667085]">{s.desc}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleAddSuggestedRoutine(s)}
-              disabled={addingRoutineName === s.name}
-              className="px-3 py-1.5 rounded-full bg-[#0B6EF3] text-white text-[12px] font-bold hover:bg-[#0958c7] transition-all shadow-2xs active:scale-95 disabled:opacity-50 flex items-center gap-1 cursor-pointer shrink-0"
+      {/* Suggested Blueprint Routines */}
+      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-[#E7ECF3] dark:border-slate-800 p-6 shadow-xs flex flex-col gap-4">
+        <div>
+          <h3 className="text-[16px] font-black text-[#111827] dark:text-white">
+            {language === "so" ? "Tusaalooyin & Rutiino Diyaar ah" : "Recommended Routine Blueprints"}
+          </h3>
+          <p className="text-[12px] text-[#667085] dark:text-slate-400 mt-0.5">
+            {language === "so"
+              ? "Ku dar rutiinadan hal gujin si aad si degdeg ah ugu bilowdo."
+              : "Pre-configured science-backed sequences ready to add with one tap."}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            {
+              name: "Power Morning",
+              icon: "wb_sunny",
+              desc: "Hydration, mindfulness & early movement",
+              timeOfDay: "Morning",
+              color: "#F59E0B",
+              bg: "#FFFBEB",
+            },
+            {
+              name: "Evening Wind Down",
+              icon: "nightlight_round",
+              desc: "Journaling, reflection & sleep preparation",
+              timeOfDay: "Evening",
+              color: "#0B6EF3",
+              bg: "#EFF6FF",
+            },
+            {
+              name: "Deep Work Sprint",
+              icon: "laptop_chromebook",
+              desc: "Focused block & distraction-free review",
+              timeOfDay: "Afternoon",
+              color: "#10B981",
+              bg: "#ECFDF3",
+            },
+          ].map((s) => (
+            <div
+              key={s.name}
+              className="flex flex-col justify-between p-4 bg-[#FAFBFD] dark:bg-slate-800/60 rounded-2xl border border-[#E7ECF3] dark:border-slate-700/60 shadow-2xs gap-3"
             >
-              {addingRoutineName === s.name ? (
-                <>
-                  <Icon name="refresh" size={14} className="animate-spin" />
-                  <span>Adding...</span>
-                </>
-              ) : (
-                <>
-                  <Icon name="add" size={14} />
-                  <span>{language === "so" ? "Ku dar" : "Add"}</span>
-                </>
-              )}
-            </button>
-          </div>
-        ))}
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
+                  style={{ background: s.bg }}
+                >
+                  <Icon name={s.icon} size={20} style={{ color: s.color }} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-bold text-[#111827] dark:text-white">{s.name}</p>
+                  <p className="text-[11px] text-[#667085] dark:text-slate-400 mt-0.5">{s.desc}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleAddSuggestedRoutine(s)}
+                disabled={addingRoutineName === s.name}
+                className="w-full py-2 rounded-xl bg-white dark:bg-slate-700 border border-[#E7ECF3] dark:border-slate-600 text-[#111827] dark:text-white text-[12px] font-black hover:bg-[#0B6EF3] hover:text-white hover:border-[#0B6EF3] transition-all shadow-2xs active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {addingRoutineName === s.name ? (
+                  <>
+                    <Icon name="refresh" size={14} className="animate-spin" />
+                    <span>Adding...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon name="add" size={14} />
+                    <span>{language === "so" ? "Ku dar" : "Use Blueprint"}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ===== CREATE ROUTINE MODAL ===== */}
@@ -401,9 +486,9 @@ export default function RoutinesClient({ routines, habits }: RoutinesClientProps
                 habits={habits}
                 toggleHabit={(id) => toggleHabitInForm(id, createForm, setCreateForm)}
               />
-              <button type="submit" disabled={creating}
+              <button type="submit" disabled={isCreating}
                 className="w-full h-12 bg-[#0B6EF3] text-white rounded-full font-bold text-[15px] flex items-center justify-center gap-2 hover:bg-[#0958c7] active:scale-[0.98] transition-all disabled:opacity-60">
-                {creating ? <><Icon name="refresh" size={18} className="animate-spin" /><span>Creating...</span></> : <><Icon name="check" size={18} /><span>Create Routine</span></>}
+                {isCreating ? <><Icon name="refresh" size={18} className="animate-spin" /><span>Creating...</span></> : <><Icon name="check" size={18} /><span>Create Routine</span></>}
               </button>
             </form>
           </div>
@@ -433,9 +518,9 @@ export default function RoutinesClient({ routines, habits }: RoutinesClientProps
                 habits={habits}
                 toggleHabit={(id) => toggleHabitInForm(id, editForm, setEditForm)}
               />
-              <button type="submit" disabled={editing}
+              <button type="submit" disabled={isUpdating}
                 className="w-full h-12 bg-[#0B6EF3] text-white rounded-full font-bold text-[15px] flex items-center justify-center gap-2 hover:bg-[#0958c7] active:scale-[0.98] transition-all disabled:opacity-60">
-                {editing ? <><Icon name="refresh" size={18} className="animate-spin" /><span>Saving...</span></> : <><Icon name="check" size={18} /><span>Save Changes</span></>}
+                {isUpdating ? <><Icon name="refresh" size={18} className="animate-spin" /><span>Saving...</span></> : <><Icon name="check" size={18} /><span>Save Changes</span></>}
               </button>
             </form>
           </div>
@@ -458,9 +543,9 @@ export default function RoutinesClient({ routines, habits }: RoutinesClientProps
                 className="flex-1 py-2.5 rounded-xl bg-[#F3F4F6] text-[#667085] text-[13px] font-bold hover:bg-[#E5E7EB]">
                 Cancel
               </button>
-              <button type="button" onClick={handleDelete} disabled={deleting}
+              <button type="button" onClick={handleDelete} disabled={isDeleting}
                 className="flex-1 py-2.5 rounded-xl bg-[#EF4444] text-white text-[13px] font-bold hover:bg-[#dc2626] flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50">
-                {deleting && <Icon name="refresh" size={16} className="animate-spin" />}
+                {isDeleting && <Icon name="refresh" size={16} className="animate-spin" />}
                 <span>Yes, Delete</span>
               </button>
             </div>

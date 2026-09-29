@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Icon from "./Icon";
 import { useTranslation } from "@/lib/i18n";
+import PrefetchLink from "@/components/navigation/PrefetchLink";
 
 interface NavTab {
   label: string;
@@ -67,7 +68,7 @@ export default function BottomNav() {
               )}
 
               {/* Tab Navigation Link */}
-              <Link
+              <PrefetchLink
                 href={tab.href}
                 className={`w-full h-full flex flex-col items-center justify-center gap-0.5 select-none transition-all ${
                   isActive ? "text-[#0B6EF3]" : "text-[#94A3B8] hover:text-[#64748B]"
@@ -90,7 +91,7 @@ export default function BottomNav() {
                     </span>
                   </>
                 )}
-              </Link>
+              </PrefetchLink>
             </div>
           );
         })}

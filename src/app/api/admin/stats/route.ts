@@ -75,14 +75,27 @@ export async function GET() {
         .toArray(),
     ]);
 
-    // Usage graph — last 14 days
+    // Usage graph — last 14 days (single aggregation, not 14 sequential queries)
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13);
+    const fourteenDaysAgoStr = fourteenDaysAgo.toISOString().slice(0, 10);
+
+    const usageGraphRaw = await db
+      .collection("habitCompletions")
+      .aggregate([
+        { $match: { date: { $gte: fourteenDaysAgoStr } } },
+        { $group: { _id: "$date", count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ])
+      .toArray();
+
+    const usageMap = new Map(usageGraphRaw.map((r) => [r._id, r.count]));
     const usageGraph: { date: string; count: number }[] = [];
     for (let i = 13; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const date = d.toISOString().slice(0, 10);
-      const count = await db.collection("habitCompletions").countDocuments({ date });
-      usageGraph.push({ date, count });
+      usageGraph.push({ date, count: usageMap.get(date) ?? 0 });
     }
 
     // Resolve user names for top streaks
@@ -153,7 +166,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       stats: {
         users: {
@@ -169,6 +182,11 @@ export async function GET() {
         usageGraph,
         topStreaks,
         topCompleters,
+      },
+    };
+    return NextResponse.json(responseData, {
+      headers: {
+        "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
       },
     });
   } catch (err) {

@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       userId: session.id,
       deletedAt: { $in: [null, undefined] },
     };
-    if (type === "income" || type === "expense") filter.type = type;
+    if (type === "income" || type === "expense" || type === "saving") filter.type = type;
 
     const transactions = await db
       .collection("financeTransactions")
@@ -29,11 +29,19 @@ export async function GET(req: NextRequest) {
     const expense = transactions
       .filter((t) => t.type === "expense")
       .reduce((s, t) => s + Number(t.amount || 0), 0);
+    const saving = transactions
+      .filter((t) => t.type === "saving")
+      .reduce((s, t) => s + Number(t.amount || 0), 0);
 
     return NextResponse.json({
       success: true,
       transactions: transactions.map((t) => ({ ...t, _id: String(t._id) })),
-      summary: { income, expense, balance: income - expense },
+      summary: {
+        income,
+        expense,
+        saving,
+        balance: income - expense - saving,
+      },
     });
   } catch (err: unknown) {
     const error = err as Error;
@@ -49,7 +57,7 @@ export async function POST(req: NextRequest) {
     const { db } = await connectToDatabase();
     const body = await req.json();
 
-    const type = body.type === "income" ? "income" : "expense";
+    const type = body.type === "income" ? "income" : body.type === "saving" ? "saving" : "expense";
     const amount = Number(body.amount);
     const title = String(body.title || "").trim();
     const category = String(body.category || "general").trim();

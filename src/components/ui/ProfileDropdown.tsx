@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Icon from "./Icon";
 import { useTranslation } from "@/lib/i18n";
 import { clearAdminStatus } from "@/lib/adminStatus";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 interface ProfileDropdownProps {
   userName?: string;
@@ -25,6 +26,17 @@ export default function ProfileDropdown({
   align = "right",
   size = "md",
 }: ProfileDropdownProps) {
+  const { profile } = useUserProfile({
+    id: "active-user",
+    name: userName,
+    email: userEmail,
+    avatarUrl,
+  });
+
+  const effectiveAvatar = profile?.avatarUrl || avatarUrl || "/images/avatar.jpg";
+  const effectiveName = profile?.name || userName;
+  const effectiveEmail = profile?.email || userEmail;
+
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -92,8 +104,8 @@ export default function ProfileDropdown({
         }`}
       >
         <Image
-          src={avatarUrl || "/images/avatar.jpg"}
-          alt={userName}
+          src={effectiveAvatar}
+          alt={effectiveName}
           fill
           className="object-cover"
           sizes="36px"
@@ -111,8 +123,8 @@ export default function ProfileDropdown({
           <div className="px-4 py-3 border-b border-[#F0F2F5] flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#0B6EF3]/30 shrink-0">
               <Image
-                src={avatarUrl || "/images/avatar.jpg"}
-                alt={userName}
+                src={effectiveAvatar}
+                alt={effectiveName}
                 fill
                 className="object-cover"
                 sizes="40px"
@@ -121,14 +133,14 @@ export default function ProfileDropdown({
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-1">
                 <p className="text-[14px] font-bold text-[#111827] truncate">
-                  {userName}
+                  {effectiveName}
                 </p>
                 <span className="inline-block px-1.5 py-0.5 rounded-full bg-[#ECFDF3] text-[#20C773] text-[9px] font-extrabold uppercase tracking-wide">
                   {language === "so" ? "Firfircoon" : "Active"}
                 </span>
               </div>
               <p className="text-[11px] text-[#667085] truncate mt-0.5">
-                {userEmail}
+                {effectiveEmail}
               </p>
             </div>
           </div>

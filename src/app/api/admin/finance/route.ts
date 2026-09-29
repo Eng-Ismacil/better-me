@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
       deletedAt: { $in: [null, undefined] },
     };
     if (!adminLedger && userId) filter.userId = userId;
-    if (type === "income" || type === "expense") filter.type = type;
+    if (type === "income" || type === "expense" || type === "saving") filter.type = type;
     const collectionName = adminLedger ? "adminFinanceEntries" : "financeTransactions";
 
     const skip = (page - 1) * limit;
@@ -72,6 +72,7 @@ export async function GET(req: NextRequest) {
 
     const income = summary.find((s) => s._id === "income")?.total || 0;
     const expense = summary.find((s) => s._id === "expense")?.total || 0;
+    const saving = summary.find((s) => s._id === "saving")?.total || 0;
 
     return NextResponse.json({
       success: true,
@@ -84,7 +85,7 @@ export async function GET(req: NextRequest) {
           userEmail: u?.email || "",
         };
       }),
-      summary: { income, expense, balance: income - expense },
+      summary: { income, expense, saving, balance: income - expense - saving },
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (err) {
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     const userId = String(body.userId || "");
-    const type = body.type === "income" ? "income" : "expense";
+    const type = body.type === "income" ? "income" : body.type === "saving" ? "saving" : "expense";
     const amount = Number(body.amount);
     const title = String(body.title || "").trim();
     const category = String(body.category || "general").trim();

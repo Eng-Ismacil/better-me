@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { getHabitHealthMetrics, getWeeklyConsistency, getUserHabits } from "@/lib/habits";
 import AppShell from "@/components/ui/AppShell";
 import InsightsClient from "@/components/insights/InsightsClient";
+import { calculateUserAchievements } from "@/lib/achievements";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +15,14 @@ export default async function InsightsPage() {
     redirect("/welcome");
   }
 
-  const [habits, metrics, weeklyDays] = await Promise.all([
+  const [habits, metrics, weeklyDays, rawGamification] = await Promise.all([
     getUserHabits(session.id),
     getHabitHealthMetrics(session.id),
     getWeeklyConsistency(session.id),
+    calculateUserAchievements(session.id),
   ]);
+
+  const gamification = JSON.parse(JSON.stringify(rawGamification));
 
   // Compute a global consistency score based on weekly days
   const avgWeekly = weeklyDays.length > 0
@@ -45,6 +49,7 @@ export default async function InsightsPage() {
         bestStreak={bestStreak}
         totalCompletions={totalCompletions}
         habitCount={habits.length}
+        gamification={gamification}
       />
     </AppShell>
   );

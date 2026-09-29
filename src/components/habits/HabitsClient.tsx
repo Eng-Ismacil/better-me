@@ -5,6 +5,8 @@ import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import HabitRow from "@/components/ui/HabitRow";
 import { Habit } from "@/types";
+import { useFetchHabits } from "@/hooks/useFetchHabits";
+import HabitListSkeleton from "./HabitListSkeleton";
 
 const FILTERS = ["All", "Morning", "Evening", "Anytime"] as const;
 
@@ -13,30 +15,22 @@ interface HabitsClientProps {
   completedIds: string[];
 }
 
-export default function HabitsClient({ habits, completedIds: initialCompletedIds }: HabitsClientProps) {
-  const [completedIds, setCompletedIds] = useState<Set<string>>(() => new Set(initialCompletedIds));
+export default function HabitsClient({ habits: initialHabits, completedIds: initialCompletedIds }: HabitsClientProps) {
+  const {
+    habits,
+    completedIds,
+    isLoading,
+    toggleHabit,
+  } = useFetchHabits({
+    initialHabits,
+    initialCompletedIds,
+  });
+
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleToggle = async (habitId: string) => {
-    const isCurrentlyDone = completedIds.has(habitId);
-    const nextSet = new Set(completedIds);
-    if (isCurrentlyDone) {
-      nextSet.delete(habitId);
-    } else {
-      nextSet.add(habitId);
-    }
-    setCompletedIds(nextSet);
-    try {
-      const res = await fetch(`/api/habits/${habitId}/toggle`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      if (!res.ok) throw new Error("Failed");
-    } catch {
-      setCompletedIds(new Set(initialCompletedIds));
-    }
+    toggleHabit(habitId);
   };
 
   const filtered = habits.filter((h) => {
@@ -127,7 +121,9 @@ export default function HabitsClient({ habits, completedIds: initialCompletedIds
       </div>
 
       {/* Habits List */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <HabitListSkeleton count={4} />
+      ) : filtered.length === 0 ? (
         <div className="p-10 bg-white rounded-3xl border border-slate-200/70 flex flex-col items-center text-center shadow-xs">
           <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0B6EF3] flex items-center justify-center mb-3">
             <Icon name="manage_search" size={26} />

@@ -26,7 +26,11 @@ export default async function AdminLayout({
   }
 
   return (
-    <AdminShell adminName={session.name} adminEmail={session.email}>
+    <AdminShell
+      adminName={user.name || session.name || "Admin"}
+      adminEmail={user.email || session.email}
+      adminAvatarUrl={user.avatarUrl || session.avatarUrl}
+    >
       {children}
     </AdminShell>
   );

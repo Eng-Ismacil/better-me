@@ -154,74 +154,188 @@ export default function SavingsGoalsPanel() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-[#E7ECF3] bg-white p-4">
-          <p className="text-[11px] font-bold uppercase text-[#667085]">{so ? "Kaydka hadda" : "Saved so far"}</p>
-          <p className="mt-1 truncate text-[20px] font-extrabold text-[#168A67]">{savedSummary || money(0, "USD")}</p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-3xl border border-[#E7ECF3] dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085] dark:text-slate-400">
+              {so ? "Kaydka Hadda Guud" : "Total Saved So Far"}
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center">
+              <Icon name="savings" size={20} />
+            </div>
+          </div>
+          <p className="mt-2 truncate text-[24px] font-black tabular-nums text-emerald-600 dark:text-emerald-400">
+            {savedSummary || money(0, "USD")}
+          </p>
+          <p className="text-[11px] text-[#667085] dark:text-slate-400 mt-1">
+            {so ? "Lacagta ku jirta yoolalka" : "Accumulated across all goals"}
+          </p>
         </div>
-        <div className="rounded-xl border border-[#E7ECF3] bg-white p-4">
-          <p className="text-[11px] font-bold uppercase text-[#667085]">{so ? "Yoolalka" : "Savings goals"}</p>
-          <p className="mt-1 text-[24px] font-extrabold tabular-nums text-[#111827]">{goals.length}</p>
+
+        <div className="rounded-3xl border border-[#E7ECF3] dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085] dark:text-slate-400">
+              {so ? "Yoolalka Firfircoon" : "Active Goals"}
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-[#0B6EF3] flex items-center justify-center">
+              <Icon name="flag" size={20} />
+            </div>
+          </div>
+          <p className="mt-2 text-[24px] font-black tabular-nums text-[#111827] dark:text-white">
+            {goals.length}
+          </p>
+          <p className="text-[11px] text-[#667085] dark:text-slate-400 mt-1">
+            {so ? "Yoolalka la dejiyay" : "Targets being tracked"}
+          </p>
         </div>
-        <div className="rounded-xl border border-[#E7ECF3] bg-white p-4">
-          <p className="text-[11px] font-bold uppercase text-[#667085]">{so ? "La gaaray" : "Goals reached"}</p>
-          <p className="mt-1 text-[24px] font-extrabold tabular-nums text-[#0B6EF3]">{achieved}</p>
+
+        <div className="rounded-3xl border border-[#E7ECF3] dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#667085] dark:text-slate-400">
+              {so ? "La Gaaray (100%)" : "Completed Goals"}
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center">
+              <Icon name="verified" size={20} />
+            </div>
+          </div>
+          <p className="mt-2 text-[24px] font-black tabular-nums text-[#0B6EF3]">
+            {achieved}
+          </p>
+          <p className="text-[11px] text-[#667085] dark:text-slate-400 mt-1">
+            {so ? "Yoolalka buuxsamay" : "Successfully completed"}
+          </p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 pt-2">
         <div>
-          <h2 className="text-[15px] font-bold text-[#111827]">{so ? "Yoolalka kaydka" : "Savings goals"}</h2>
-          <p className="mt-0.5 text-[11px] text-[#667085]">{so ? "Samee qorshe, dabadeed ku dar kaydka." : "Set a target, then add money as you save."}</p>
+          <h2 className="text-[17px] font-black text-[#111827] dark:text-white">
+            {so ? "Yoolalka Kaydkaaga" : "Your Savings Goals"}
+          </h2>
+          <p className="mt-0.5 text-[12px] text-[#667085] dark:text-slate-400">
+            {so ? "Samee qorshe cad oo kordhi kaydkaaga tallaabo kasta." : "Set a target, save progressively, and watch your wealth grow."}
+          </p>
         </div>
         <button
           type="button"
           onClick={openNew}
-          className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg bg-[#168A67] px-3 text-[12px] font-bold text-white"
+          className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-[12px] font-bold text-white shadow-xs cursor-pointer transition-all"
         >
-          <Icon name="add" size={16} />
-          {so ? "Yool cusub" : "New goal"}
+          <Icon name="add" size={17} />
+          {so ? "Yool Cusub" : "New Goal"}
         </button>
       </div>
 
       {loading ? (
-        <div className="rounded-xl border border-[#E7ECF3] bg-white p-8 text-center text-[13px] text-[#667085]">{so ? "Waa la soo rarayaa..." : "Loading savings goals..."}</div>
+        <div className="rounded-3xl border border-[#E7ECF3] dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center text-[13px] text-[#667085]">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mb-3"></div>
+          <p>{so ? "Waa la soo rarayaa yoolalka..." : "Loading savings goals..."}</p>
+        </div>
       ) : goals.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[#C9D8D1] bg-white p-8 text-center">
-          <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-[#EAF8F2] text-[#168A67]"><Icon name="savings" size={22} /></span>
-          <p className="mt-3 text-[13px] font-bold text-[#111827]">{so ? "Weli yool kayd ma lihid" : "No savings goals yet"}</p>
-          <p className="mt-1 text-[12px] text-[#667085]">{so ? "Samee yoolkaaga koowaad si aad ula socoto horumarka." : "Create a goal to track your savings progress."}</p>
+        <div className="rounded-3xl border border-dashed border-[#C9D8D1] dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 mb-3">
+            <Icon name="savings" size={28} />
+          </span>
+          <p className="text-[15px] font-black text-[#111827] dark:text-white">
+            {so ? "Weli yool kayd ma lihid" : "No savings goals set yet"}
+          </p>
+          <p className="mt-1 text-[13px] text-[#667085] dark:text-slate-400 max-w-sm mx-auto mb-4">
+            {so ? "Samee yoolkaaga koowaad (sida Sanduuqa Degdegga, Guri, ama Baabuur) si aad ula socoto." : "Create your first goal (such as Emergency Fund, New Asset, or Education) to stay disciplined."}
+          </p>
+          <button
+            type="button"
+            onClick={openNew}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 text-white px-4 py-2 text-[12px] font-bold cursor-pointer hover:bg-emerald-700"
+          >
+            <Icon name="add" size={16} />
+            {so ? "Deji Yool Cusub" : "Create Goal"}
+          </button>
         </div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           {goals.map((goal) => {
             const progress = Math.min(100, Math.round((goal.savedAmount / goal.targetAmount) * 100));
+            const isCompleted = progress >= 100;
             return (
-              <article key={goal._id} className="rounded-xl border border-[#E7ECF3] bg-white p-4">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#EAF8F2] text-[#168A67]"><Icon name="savings" size={20} /></span>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-[14px] font-bold text-[#111827]">{goal.title}</h3>
-                    <p className="mt-0.5 text-[11px] text-[#667085]">
-                      {goal.targetDate ? `${so ? "Bartilmaameed" : "Target"}: ${goal.targetDate}` : (so ? "Taariikh lama dejin" : "No target date")}
+              <article
+                key={goal._id}
+                className="rounded-3xl border border-[#E7ECF3] dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs hover:border-[#CBD5E1] transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-start gap-3.5">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-500/20">
+                      <Icon name="savings" size={22} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="truncate text-[15px] font-black text-[#111827] dark:text-white">
+                          {goal.title}
+                        </h3>
+                        {isCompleted && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                            {so ? "LA GAARAY" : "COMPLETED"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-[#667085] dark:text-slate-400">
+                        {goal.targetDate
+                          ? `${so ? "Bartilmaameed" : "Target Date"}: ${goal.targetDate}`
+                          : so ? "Taariikh go'an ma leh" : "Open-ended target"}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => openEdit(goal)}
+                        aria-label={so ? "Tafatir yoolka" : "Edit goal"}
+                        className="rounded-lg p-1.5 text-[#667085] hover:bg-[#F4F8FF] hover:text-[#0B6EF3] cursor-pointer"
+                      >
+                        <Icon name="edit" size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void remove(goal)}
+                        aria-label={so ? "Tirtir yoolka" : "Delete goal"}
+                        className="rounded-lg p-1.5 text-[#B42318] hover:bg-[#FEF2F2] cursor-pointer"
+                      >
+                        <Icon name="delete" size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-baseline justify-between gap-2">
+                    <p className="truncate text-[20px] font-black tabular-nums text-emerald-600 dark:text-emerald-400">
+                      {money(goal.savedAmount, goal.currency)}
+                    </p>
+                    <p className="shrink-0 text-[11px] font-bold text-[#667085] dark:text-slate-400">
+                      {so ? "ka mid ah" : "of"} {money(goal.targetAmount, goal.currency)}
                     </p>
                   </div>
-                  <div className="flex shrink-0 gap-1">
-                    <button type="button" onClick={() => openEdit(goal)} aria-label={so ? "Tafatir yoolka" : "Edit goal"} className="rounded-lg p-1.5 text-[#667085] hover:bg-[#F4F8FF]"><Icon name="edit" size={16} /></button>
-                    <button type="button" onClick={() => void remove(goal)} aria-label={so ? "Tirtir yoolka" : "Delete goal"} className="rounded-lg p-1.5 text-[#B42318] hover:bg-[#FEF2F2]"><Icon name="delete" size={16} /></button>
+
+                  <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 p-0.5">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isCompleted ? "bg-[#10B981]" : "bg-emerald-500"
+                      }`}
+                      style={{ width: `${progress}%` }}
+                    />
                   </div>
                 </div>
-                <div className="mt-4 flex items-baseline justify-between gap-2">
-                  <p className="truncate text-[18px] font-extrabold tabular-nums text-[#168A67]">{money(goal.savedAmount, goal.currency)}</p>
-                  <p className="shrink-0 text-[11px] font-semibold text-[#667085]">{so ? "ka mid ah" : "of"} {money(goal.targetAmount, goal.currency)}</p>
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#EAF0EC]">
-                  <div className="h-full rounded-full bg-[#168A67] transition-all" style={{ width: `${progress}%` }} />
-                </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-[#168A67]">{progress}%</span>
-                  <button type="button" onClick={() => { setContributionGoal(goal); setContribution(""); }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#EAF8F2] px-3 text-[11px] font-bold text-[#168A67]">
-                    <Icon name="add" size={15} />{so ? "Ku dar kayd" : "Add savings"}
+
+                <div className="mt-4 pt-3 border-t border-[#F2F4F7] dark:border-slate-800 flex items-center justify-between">
+                  <span className="text-[12px] font-black text-emerald-600 dark:text-emerald-400">
+                    {progress}% {so ? "La keydsaday" : "Saved"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContributionGoal(goal);
+                      setContribution("");
+                    }}
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 px-3.5 text-[11px] font-black text-emerald-700 dark:text-emerald-300 transition-colors cursor-pointer"
+                  >
+                    <Icon name="add" size={15} />
+                    {so ? "Ku dar kayd" : "Add Savings"}
                   </button>
                 </div>
               </article>

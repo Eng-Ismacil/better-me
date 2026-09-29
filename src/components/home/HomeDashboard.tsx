@@ -10,6 +10,7 @@ import HabitRow from "@/components/ui/HabitRow";
 import PwaInstallCard from "@/components/pwa/PwaInstallCard";
 import { Habit, WeeklyConsistencyDay } from "@/types";
 import { useTranslation } from "@/lib/i18n";
+import { useHabitsOptimistic } from "@/hooks/useHabitsOptimistic";
 
 interface HomeDashboardProps {
   userName: string;
@@ -25,50 +26,29 @@ export default function HomeDashboard({
   weeklyDays,
 }: HomeDashboardProps) {
   const { language } = useTranslation();
-  const [completedIds, setCompletedIds] = useState<Set<string>>(
-    () => new Set(initialCompletedHabitIds)
-  );
+
+  // ── TanStack React Query (Optimistic UI - 0ms Latency) ──
+  const {
+    habits: activeHabits,
+    completedIds,
+    toggleHabit,
+  } = useHabitsOptimistic({
+    initialHabits: habits,
+    initialCompletedIds: initialCompletedHabitIds,
+  });
+
   const [showFocusTimer, setShowFocusTimer] = useState(false);
   const [focusSeconds, setFocusSeconds] = useState(25 * 60);
   const [timerRunning, setTimerRunning] = useState(false);
 
-  // Sync state if initialCompletedHabitIds changes without calling setState inside useEffect unconditionally
-  const [prevInitial, setPrevInitial] = useState(initialCompletedHabitIds);
-  if (prevInitial !== initialCompletedHabitIds) {
-    setPrevInitial(initialCompletedHabitIds);
-    setCompletedIds(new Set(initialCompletedHabitIds));
-  }
-
-  const totalHabits = habits.length;
-  const completedCount = habits.filter((h) => completedIds.has(h._id || "")).length;
+  const totalHabits = activeHabits.length;
+  const completedCount = activeHabits.filter((h) => completedIds.has(h._id || "")).length;
   const percentage = totalHabits > 0 ? Math.round((completedCount / totalHabits) * 100) : 0;
   const remaining = totalHabits - completedCount;
 
-  // Toggle habit completion handler with optimistic update
+  // Toggle habit completion handler with 0ms optimistic feedback
   const handleToggleHabit = async (habitId: string) => {
-    const isCurrentlyDone = completedIds.has(habitId);
-    const nextSet = new Set(completedIds);
-    if (isCurrentlyDone) {
-      nextSet.delete(habitId);
-    } else {
-      nextSet.add(habitId);
-    }
-    setCompletedIds(nextSet);
-
-    try {
-      const res = await fetch(`/api/habits/${habitId}/toggle`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to toggle completion");
-      }
-    } catch {
-      // Rollback on error
-      setCompletedIds(completedIds);
-    }
+    toggleHabit(habitId);
   };
 
   // Focus Timer controls
@@ -259,7 +239,7 @@ export default function HomeDashboard({
 
         {/* Habit Cards List */}
         <div className="flex flex-col gap-2.5">
-          {habits.map((habit) => (
+          {activeHabits.map((habit) => (
             <HabitRow
               key={habit._id}
               habit={habit}
@@ -268,7 +248,7 @@ export default function HomeDashboard({
             />
           ))}
 
-          {habits.length === 0 && (
+          {activeHabits.length === 0 && (
             <div className="p-8 bg-white rounded-3xl border border-slate-200/70 text-center flex flex-col items-center shadow-xs">
               <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2.5">
                 <Icon name="spa" size={26} />

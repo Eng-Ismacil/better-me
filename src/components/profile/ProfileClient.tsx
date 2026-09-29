@@ -4,8 +4,10 @@ import React, { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import Icon from "@/components/ui/Icon";
 import { useTranslation } from "@/lib/i18n";
+import { USER_PROFILE_QUERY_KEY, UserProfileData } from "@/hooks/useUserProfile";
 
 interface ProfileClientProps {
   user: {
@@ -34,6 +36,7 @@ const ACHIEVEMENTS = [
 
 export default function ProfileClient({ user, stats }: ProfileClientProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { language, t } = useTranslation();
 
   const [currentAvatar, setCurrentAvatar] = useState(user.avatarUrl);
@@ -112,6 +115,16 @@ export default function ProfileClient({ user, stats }: ProfileClientProps) {
         if (!nameRes.ok) throw new Error("Failed to update name");
         setUserName(editName.trim());
       }
+
+      // 3. Update React Query cache so Admin Panel & all navbars update instantly (0ms)
+      queryClient.setQueryData<UserProfileData>(USER_PROFILE_QUERY_KEY, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          avatarUrl: newAvatarUrl,
+          name: editName.trim(),
+        };
+      });
 
       setEditModalOpen(false);
       setAlertMsg({

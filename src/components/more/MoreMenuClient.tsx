@@ -136,12 +136,12 @@ export default function MoreMenuClient({
     },
     {
       label: language === "so" ? "Maaliyaddayda (Finance)" : "Personal Finance Tracker",
-      desc: language === "so" ? "La soco dakhligaaga, kharashkaaga iyo haraagaaga maalinlaha ah" : "Track daily income, expenses & balance with calm clarity",
+      desc: language === "so" ? "La soco dakhliga, kharashka, kaydka lacagta iyo haraagaaga" : "Track daily income, expenses, wealth savings & liquid balance",
       href: "/finance",
       icon: "account_balance_wallet",
       color: "#059669",
       bg: "#ECFDF5",
-      badge: null,
+      badge: language === "so" ? "Dakhli, Kharash & Kayd" : "Income, Expense & Vault",
     },
   ];
 
