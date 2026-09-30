@@ -71,7 +71,7 @@ export default function HabitsClient({ habits: initialHabits, completedIds: init
           <Link
             href="/habits/new"
             aria-label="Add habit"
-            className="w-12 h-12 rounded-full bg-[#0F172A] hover:bg-[#1E293B] flex items-center justify-center text-white shadow-xs active:scale-95 transition-all"
+            className="w-12 h-12 rounded-full bg-[#0B6EF3] hover:bg-[#0958c7] flex items-center justify-center text-white shadow-md shadow-[#0B6EF3]/25 active:scale-95 transition-all"
           >
             <Icon name="add" size={22} />
           </Link>
@@ -132,7 +132,7 @@ export default function HabitsClient({ habits: initialHabits, completedIds: init
           <p className="text-[13px] text-slate-500 mt-1">Try a different filter or search term</p>
           <Link
             href="/habits/new"
-            className="mt-5 px-5 py-2.5 bg-[#0F172A] text-white hover:bg-[#1E293B] rounded-full text-[13px] font-bold active:scale-95 transition-all"
+            className="mt-5 px-5 py-2.5 bg-[#0B6EF3] text-white hover:bg-[#0958c7] rounded-full text-[13px] font-bold shadow-md shadow-[#0B6EF3]/20 active:scale-95 transition-all"
           >
             + Add a new habit
           </Link>
