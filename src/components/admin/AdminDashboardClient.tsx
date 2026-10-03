@@ -137,36 +137,47 @@ export default function AdminDashboardClient() {
             </span>
           </div>
 
-          {/* Interactive Bar Visualization */}
+          {/* Interactive Bar Visualization — horizontally scrollable on mobile */}
           {usageGraph.length > 0 ? (
-            <div className="flex items-end justify-between gap-1.5 sm:gap-2.5 h-44 pt-4 border-b border-[#F1F5F9]">
-              {usageGraph.map((item) => {
-                const heightPercent = Math.max(8, (item.count / maxUsage) * 100);
-                const shortDate = item.date.slice(5); // MM-DD
-                return (
-                  <div
-                    key={item.date}
-                    className="flex-1 flex flex-col items-center justify-end h-full group relative"
-                  >
-                    {/* Tooltip on hover */}
-                    <div className="absolute -top-8 hidden group-hover:flex px-2 py-1 bg-[#0F172A] text-white text-[10px] font-bold rounded shadow-md z-10 whitespace-nowrap pointer-events-none">
-                      {item.date}: {item.count} habits
-                    </div>
+            <div className="relative">
+              {/* Scroll container */}
+              <div className="overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
+                <div
+                  className="flex items-end gap-1.5 h-44 pt-4 border-b border-[#F1F5F9]"
+                  style={{ minWidth: `${usageGraph.length * 38}px` }}
+                >
+                  {usageGraph.map((item) => {
+                    const heightPercent = Math.max(8, (item.count / maxUsage) * 100);
+                    const shortDate = item.date.slice(5); // MM-DD
+                    return (
+                      <div
+                        key={item.date}
+                        className="flex-1 flex flex-col items-center justify-end h-full group relative"
+                        style={{ minWidth: "28px" }}
+                      >
+                        {/* Tooltip on hover */}
+                        <div className="absolute -top-8 hidden group-hover:flex px-2 py-1 bg-[#0F172A] text-white text-[10px] font-bold rounded shadow-md z-10 whitespace-nowrap pointer-events-none">
+                          {item.date}: {item.count} habits
+                        </div>
 
-                    <span className="text-[10px] font-bold text-[#64748B] tabular-nums mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {item.count}
-                    </span>
+                        <span className="text-[10px] font-bold text-[#64748B] tabular-nums mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {item.count}
+                        </span>
 
-                    <div
-                      className="w-full max-w-[28px] rounded-t-lg bg-gradient-to-t from-[#0B6EF3] to-[#60A5FA] group-hover:from-[#0958C7] group-hover:to-[#3B82F6] transition-all"
-                      style={{ height: `${heightPercent}%` }}
-                    />
-                    <span className="text-[9px] text-[#94A3B8] font-medium mt-1 truncate">
-                      {shortDate}
-                    </span>
-                  </div>
-                );
-              })}
+                        <div
+                          className="w-full rounded-t-lg bg-gradient-to-t from-[#0B6EF3] to-[#60A5FA] group-hover:from-[#0958C7] group-hover:to-[#3B82F6] transition-all"
+                          style={{ height: `${heightPercent}%` }}
+                        />
+                        <span className="text-[9px] text-[#94A3B8] font-medium mt-1 block text-center">
+                          {shortDate}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Scroll hint fade on right edge */}
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white to-transparent" />
             </div>
           ) : (
             <div className="h-44 flex items-center justify-center text-[#94A3B8] text-[13px]">

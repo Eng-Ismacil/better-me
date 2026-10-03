@@ -126,12 +126,19 @@ export default function HabitRow({
               {categoryLabel} • {difficultyLabel}
             </span>
 
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-200/60">
-              <Icon name="bolt" size={13} className="text-amber-600" />
-              <span>
-                {streak} {streak === 1 ? "day" : "days"}
+            {streak > 0 ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-200/60">
+                <Icon name="bolt" size={13} className="text-amber-600" />
+                <span>
+                  {streak} {streak === 1 ? "day" : "days"}
+                </span>
               </span>
-            </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 text-[11px] font-bold border border-orange-200/60">
+                <Icon name="restart_alt" size={13} className="text-orange-500" />
+                <span>Restart streak</span>
+              </span>
+            )}
           </div>
         </div>
       </Link>

@@ -17,7 +17,7 @@ interface HabitsClientProps {
 
 export default function HabitsClient({ habits: initialHabits, completedIds: initialCompletedIds }: HabitsClientProps) {
   const {
-    habits,
+    habits: rawHabits,
     completedIds,
     isLoading,
     toggleHabit,
@@ -25,6 +25,9 @@ export default function HabitsClient({ habits: initialHabits, completedIds: init
     initialHabits,
     initialCompletedIds,
   });
+
+  // Safety guard: ensure habits is always an array
+  const habits = Array.isArray(rawHabits) ? rawHabits : [];
 
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");

@@ -173,7 +173,7 @@ export default function SupportChatClient({ currentUser }: SupportChatClientProp
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-120px)] max-w-2xl mx-auto bg-white rounded-3xl border border-[#E7ECF3] shadow-sm overflow-hidden select-none">
+    <div className="flex flex-col h-[calc(100dvh-216px)] sm:h-[calc(100dvh-160px)] md:h-[calc(100vh-120px)] max-w-2xl mx-auto bg-white rounded-3xl border border-[#E7ECF3] shadow-sm overflow-hidden select-none">
       {/* Chat Header */}
       <div className="px-5 py-3.5 border-b border-[#E7ECF3] bg-gradient-to-r from-slate-50 to-white flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
@@ -215,7 +215,7 @@ export default function SupportChatClient({ currentUser }: SupportChatClientProp
       )}
 
       {/* Messages Stream */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-3.5">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 flex flex-col gap-3.5">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
             <Icon name="progress_activity" size={26} className="animate-spin text-[#0B6EF3]" />

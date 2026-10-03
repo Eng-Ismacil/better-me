@@ -44,18 +44,18 @@ export default function ConsistencyStrip({
         </span>
       </div>
 
-      {/* Capsule Bar Chart (Inspired by Torin / Image 3) */}
-      <div className="grid grid-cols-7 gap-2 pt-1 pb-1">
+      {/* Capsule Bar Chart — fully responsive */}
+      <div className="grid grid-cols-7 gap-1.5 sm:gap-2 pt-1 pb-1">
         {days.map((day, idx) => {
           const isFull = day.completionRate >= 100;
           const hasProgress = day.completionRate > 0;
           const heightPercent = Math.max(hasProgress ? 20 : 8, Math.min(100, day.completionRate));
 
           return (
-            <div key={idx} className="flex flex-col items-center gap-2 select-none group">
+            <div key={idx} className="flex flex-col items-center gap-1.5 sm:gap-2 select-none group min-w-0">
               {/* Capsule track */}
               <div
-                className={`w-full max-w-[34px] h-20 sm:h-22 rounded-full relative flex flex-col justify-end p-1 transition-all ${
+                className={`w-full h-16 sm:h-20 rounded-full relative flex flex-col justify-end p-1 transition-all ${
                   day.isToday
                     ? "bg-slate-100 ring-2 ring-[#0B6EF3]/30"
                     : "bg-slate-100/80 hover:bg-slate-100"
@@ -82,13 +82,13 @@ export default function ConsistencyStrip({
 
               {/* Day label */}
               <span
-                className={`text-[11px] tracking-tight transition-colors ${
+                className={`text-[9px] sm:text-[11px] tracking-tight transition-colors text-center leading-none ${
                   day.isToday
                     ? "text-[#0B6EF3] font-extrabold"
                     : "text-[#64748B] font-semibold"
                 }`}
               >
-                {day.isToday ? "Today" : day.dayName.slice(0, 3)}
+                {day.isToday ? "Now" : day.dayName.slice(0, 3)}
               </span>
 
               {/* Micro dot */}
